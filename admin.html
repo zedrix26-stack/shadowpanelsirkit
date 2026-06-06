@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <title>Admin Portal — GameVault</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/jpg" href="images/Logo.jpg" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --accent: #2dd4bf; --accent2: #7c3aed;
+      --danger: #ef4444; --warning: #f59e0b; --success: #22c55e;
+      --bg-deep: #05070c; --bg-card: #0f1119; --bg-panel: #13171f;
+      --border: #1e2433; --text-muted: #8892b0; --text-main: #e2e8f0;
+      --sidebar-w: 250px; --topbar-h: 56px; --radius: 12px;
+    }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin:0; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-main); overflow-x: hidden; }
+
+    /* ── LOGIN ── */
+    #loginScreen { min-height: 100vh; min-height: -webkit-fill-available; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 60% 40%, #0d1a2e 0%, #05070c 70%); padding: 20px; }
+    .login-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 32px; width: 100%; max-width: 360px; text-align: center; }
+    .login-box h1 { font-size: 24px; font-weight: 900; background: linear-gradient(120deg,#2dd4bf,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 6px; }
+    .login-box p { color: var(--text-muted); font-size: 13px; margin: 0 0 24px; }
+    .access-input { width: 100%; padding: 12px 16px; background: #0a0d14; border: 1px solid var(--border); border-radius: 10px; color: white; font-size: 16px; outline: none; margin-bottom: 8px; -webkit-appearance: none; }
+    .access-input:focus { border-color: var(--accent); }
+    .access-error { color: #ff8a7a; font-size: 13px; margin-top: 4px; min-height: 20px; }
+    .verify-btn { width: 100%; padding: 14px; background: var(--accent); color: #0f172a; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; -webkit-appearance: none; touch-action: manipulation; }
+    .verify-btn:active { opacity: 0.85; }
+
+    /* ── SHELL ── */
+    #adminShell { display: none; min-height: 100vh; }
+    #adminShell.active { display: flex; }
+
+    /* ── MOBILE TOPBAR ── */
+    #mobileTopbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); background: var(--bg-card); border-bottom: 1px solid var(--border); z-index: 200; align-items: center; justify-content: space-between; padding: 0 16px; }
+    #mobileTopbar .m-logo { font-size: 16px; font-weight: 900; background: linear-gradient(120deg,#2dd4bf,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    #hamburgerBtn { background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 5px; touch-action: manipulation; }
+    #hamburgerBtn span { display: block; width: 22px; height: 2px; background: var(--text-main); border-radius: 2px; transition: all 0.25s; }
+    #hamburgerBtn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    #hamburgerBtn.open span:nth-child(2) { opacity: 0; }
+    #hamburgerBtn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    #mobilePendingBadge { background: var(--warning); color: #0f172a; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; display: none; }
+
+    /* ── SIDEBAR OVERLAY ── */
+    #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 149; backdrop-filter: blur(2px); }
+    #sidebarOverlay.show { display: block; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: var(--sidebar-w); background: var(--bg-card); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+      z-index: 150; overflow-y: auto; overflow-x: hidden;
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+      -webkit-overflow-scrolling: touch;
+    }
+    .sidebar-logo { padding: 20px 18px 14px; font-size: 17px; font-weight: 900; letter-spacing: 1px; background: linear-gradient(120deg,#2dd4bf,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .sidebar-logo span { font-size: 10px; display: block; color: var(--text-muted); font-weight: 400; letter-spacing: 0; background: none; -webkit-background-clip: initial; background-clip: initial; margin-top: 2px; }
+    .nav-section { padding: 14px 14px 4px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; flex-shrink: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; margin: 2px 8px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-muted); transition: all 0.15s; text-decoration: none; border: none; background: none; width: calc(100% - 16px); text-align: left; touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; }
+    .nav-item .ni { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .nav-item:hover, .nav-item:focus { background: rgba(45,212,191,0.08); color: var(--text-main); outline: none; }
+    .nav-item.active { background: rgba(45,212,191,0.12); color: var(--accent); }
+    .sidebar-footer { margin-top: auto; padding: 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+    /* ── MAIN CONTENT ── */
+    #mainContent { margin-left: var(--sidebar-w); flex: 1; padding: 28px 28px; min-height: 100vh; min-width: 0; }
+
+    /* ── TOPBAR ── */
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+    .topbar h2 { margin: 0; font-size: 20px; font-weight: 800; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+    /* ── SECTIONS ── */
+    .admin-section { display: none; }
+    .admin-section.active { display: block; }
+
+    /* ── ANALYTICS CARDS ── */
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; margin-bottom: 24px; }
+    .a-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; cursor: default; }
+    .a-card:hover { border-color: rgba(45,212,191,0.3); transform: translateY(-2px); }
+    .a-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,var(--accent),var(--accent2)); transform: scaleX(0); transition: transform 0.3s; }
+    .a-card:hover::after { transform: scaleX(1); }
+    .a-card-icon { font-size: 20px; margin-bottom: 8px; }
+    .a-card-num { font-size: 28px; font-weight: 900; line-height: 1; }
+    .a-card-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
+
+    /* ── BUTTONS ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.18s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; white-space: nowrap; min-height: 36px; }
+    .btn-primary { background: var(--accent); color: #0f172a; }
+    .btn-primary:hover { background: #5eead4; }
+    .btn-secondary { background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+    .btn-danger:hover { background: rgba(239,68,68,0.3); }
+    .btn-warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+    .btn-warning:hover { background: rgba(245,158,11,0.3); }
+    .btn-success { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
+    .btn-sm { padding: 6px 12px; font-size: 11px; min-height: 30px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-admin { display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); transition: 0.15s; touch-action: manipulation; min-height: 36px; white-space: nowrap; }
+    .btn-admin-primary { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+    .btn-admin-danger { background: rgba(239,68,68,0.12); color: var(--danger); border-color: rgba(239,68,68,0.3); }
+    .btn-admin-warning { background: rgba(245,158,11,0.12); color: var(--warning); border-color: rgba(245,158,11,0.3); }
+
+    /* ── FORMS ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control { width: 100%; padding: 11px 14px; background: #0a0d14; border: 1px solid var(--border); border-radius: 9px; color: var(--text-main); font-size: 14px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,212,191,0.1); }
+    .form-control option { background: #0a0d14; }
+    textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    /* ── PANELS ── */
+    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+    .panel-title { font-size: 14px; font-weight: 700; margin: 0; }
+
+    /* ── TABLES ── */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
+    .data-table th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); background: #0a0d14; white-space: nowrap; }
+    .data-table td { padding: 11px 12px; border-bottom: 1px solid rgba(30,36,51,0.6); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(45,212,191,0.03); }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
+    .admin-table th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); background: #0a0d14; white-space: nowrap; }
+    .admin-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,36,51,0.6); }
+    .admin-table tr:hover td { background: rgba(45,212,191,0.03); }
+
+    /* ── BADGES ── */
+    .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .badge-active { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.25); }
+    .badge-hidden { background: rgba(107,114,128,0.2); color: #9ca3af; border: 1px solid rgba(107,114,128,0.25); }
+    .badge-coming { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.25); }
+    .badge-featured { background: rgba(124,58,237,0.2); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+    .badge-used { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+    .badge-unused { background: rgba(45,212,191,0.1); color: var(--accent); border: 1px solid rgba(45,212,191,0.2); }
+    .badge-disabled { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+    .badge-expired { background: rgba(107,114,128,0.15); color: #6b7280; border: 1px solid rgba(107,114,128,0.2); }
+    .status-badge { display: inline-flex; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+    .status-used { background: rgba(34,197,94,0.15); color: var(--success); }
+    .status-unused { background: rgba(45,212,191,0.1); color: var(--accent); }
+    .status-disabled { background: rgba(239,68,68,0.12); color: var(--danger); }
+
+    /* ── TOGGLE ── */
+    .toggle-sw { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .toggle-sw input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; background: #1e2433; border-radius: 22px; cursor: pointer; transition: 0.2s; }
+    .toggle-track::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #6b7280; border-radius: 50%; transition: 0.2s; }
+    .toggle-sw input:checked + .toggle-track { background: rgba(45,212,191,0.25); }
+    .toggle-sw input:checked + .toggle-track::before { background: var(--accent); transform: translateX(18px); }
+
+    /* ── MODALS ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(5,7,12,0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9000; align-items: flex-end; justify-content: center; padding: 0; }
+    .modal-overlay.open { display: flex; }
+    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-width: 100%; max-height: 92vh; overflow-y: auto; padding: 24px 20px; position: relative; -webkit-overflow-scrolling: touch; animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1); }
+    .modal-box.modal-sm { max-width: 100%; }
+    .modal-box.modal-lg { max-width: 100%; }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-head h3 { margin: 0; font-size: 16px; font-weight: 800; }
+    .modal-close { background: rgba(255,255,255,0.08); border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 0; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+    .modal-close:hover { background: rgba(255,255,255,0.14); color: var(--text-main); }
+    .modal-footer-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .search-box { padding: 9px 14px; background: #0a0d14; border: 1px solid var(--border); border-radius: 30px; color: var(--text-main); font-size: 13px; outline: none; flex: 1; min-width: 140px; -webkit-appearance: none; }
+    .search-box:focus { border-color: var(--accent); }
+    .filter-select { padding: 9px 12px; background: #0a0d14; border: 1px solid var(--border); border-radius: 30px; color: var(--text-main); font-size: 12px; cursor: pointer; outline: none; -webkit-appearance: none; }
+    .filter-group { display: flex; gap: 8px; align-items: center; background: #0f1119; padding: 6px 12px; border-radius: 40px; border: 1px solid var(--border); }
+    .filter-group label { font-size: 12px; color: var(--text-muted); }
+    .status-filter { background: #0a0d14; border: 1px solid var(--border); color: white; padding: 6px 12px; border-radius: 30px; font-size: 12px; cursor: pointer; -webkit-appearance: none; }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; gap: 6px; align-items: center; margin-top: 14px; justify-content: flex-end; flex-wrap: wrap; }
+    .page-btn { padding: 6px 13px; border-radius: 8px; border: 1px solid var(--border); background: #0a0d14; color: var(--text-muted); font-size: 12px; cursor: pointer; transition: 0.15s; min-height: 32px; touch-action: manipulation; }
+    .page-btn:hover, .page-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+    .page-info { font-size: 12px; color: var(--text-muted); }
+
+    /* ── TOAST ── */
+    #toastContainer { position: fixed; bottom: 20px; right: 16px; left: 16px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 500; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); animation: toastIn 0.25s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); pointer-events: auto; }
+    .toast-success { border-color: rgba(34,197,94,0.45); }
+    .toast-error { border-color: rgba(239,68,68,0.45); }
+    .toast-info { border-color: rgba(45,212,191,0.35); }
+    @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── MISC ── */
+    .img-preview-box { width: 72px; height: 100px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border); background: #0a0d14; display: block; }
+    .confirm-icon { font-size: 40px; text-align: center; margin-bottom: 10px; }
+    .confirm-msg { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 4px; }
+    .confirm-name { text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 18px; }
+    .spinner { width: 20px; height: 20px; border: 2px solid rgba(45,212,191,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-row td { text-align: center; padding: 32px; color: var(--text-muted); }
+    .ann-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .ann-card.ann-active { border-color: rgba(45,212,191,0.25); }
+    .ann-card h4 { margin: 0 0 4px; font-size: 13px; }
+    .ann-card p { margin: 0; font-size: 12px; color: var(--text-muted); }
+    .ann-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
+    .upload-tabs { display: flex; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+    .upload-tab { flex: 1; padding: 9px; text-align: center; font-size: 12px; cursor: pointer; background: #0a0d14; color: var(--text-muted); transition: 0.15s; border: none; touch-action: manipulation; }
+    .upload-tab.active { background: rgba(45,212,191,0.12); color: var(--accent); font-weight: 600; }
+    .upload-panel { display: none; }
+    .upload-panel.active { display: block; }
+    .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; color: var(--text-muted); font-size: 12px; }
+    .drop-zone:hover, .drop-zone:active { border-color: var(--accent); color: var(--accent); }
+    .dl-count { font-family: monospace; font-size: 11px; background: rgba(45,212,191,0.1); color: var(--accent); padding: 2px 7px; border-radius: 20px; }
+    .game-thumb-sm { width: 36px; height: 50px; object-fit: cover; border-radius: 4px; background: #0a0d14; }
+    .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fill,minmax(130px,1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; position: relative; overflow: hidden; }
+    .stat-number { font-size: 26px; font-weight: 900; color: var(--accent); }
+    .generate-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+    .gen-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .gen-input { background: #0a0d14; border: 1px solid var(--border); padding: 9px 14px; border-radius: 30px; color: white; font-size: 13px; outline: none; -webkit-appearance: none; }
+    .gen-input:focus { border-color: var(--accent); }
+    .expiry-badge { font-family: monospace; font-size: 11px; padding: 2px 6px; border-radius: 20px; background: #1e293b; color: #a5f3fc; white-space: nowrap; }
+    .expiry-urgent { background: #7f1a1a; color: #ffb347; }
+    .code-badge { font-family: monospace; letter-spacing: 1px; font-size: 12px; }
+    .copy-btn { padding: 3px 9px; font-size: 10px; border-radius: 20px; border: 1px solid var(--border); background: #1e2433; color: var(--text-muted); cursor: pointer; touch-action: manipulation; }
+    .copy-btn:hover { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+
+    /* ════════════════ DESKTOP (≥ 900px) ════════════════ */
+    @media (min-width: 900px) {
+      #mobileTopbar { display: none !important; }
+      #sidebarOverlay { display: none !important; }
+      #sidebar { transform: none !important; }
+      #mainContent { margin-left: var(--sidebar-w); padding: 28px 32px; }
+      .modal-overlay { align-items: center; padding: 20px; }
+      .modal-box { border-radius: 18px; max-width: 560px; animation: modalFadeIn 0.22s ease; }
+      .modal-box.modal-sm { max-width: 400px; }
+      .modal-box.modal-lg { max-width: 740px; }
+      @keyframes modalFadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+      #toastContainer { left: auto; right: 24px; bottom: 24px; width: 300px; }
+      .analytics-grid { grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); }
+    }
+
+    /* ════════════════ MOBILE (< 900px) ════════════════ */
+    @media (max-width: 899px) {
+      #mobileTopbar { display: flex; }
+      #sidebar { transform: translateX(-100%); top: 0; }
+      #sidebar.open { transform: translateX(0); box-shadow: 4px 0 32px rgba(0,0,0,0.6); }
+      #adminShell.active { display: block; }
+      #mainContent { margin-left: 0; padding: 16px; padding-top: calc(var(--topbar-h) + 16px); }
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+      .analytics-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+      .topbar { margin-bottom: 16px; }
+      .topbar h2 { font-size: 17px; }
+      .filter-bar { gap: 6px; }
+      .filter-select, .search-box { font-size: 14px; }
+      .modal-footer-btns { flex-direction: column-reverse; }
+      .modal-footer-btns .btn { width: 100%; justify-content: center; }
+      .ann-card { flex-direction: column; }
+      .ann-actions { flex-direction: row; align-items: center; width: 100%; justify-content: flex-end; }
+      .action-buttons { gap: 4px; }
+      .generate-panel .gen-controls { flex-direction: column; align-items: stretch; }
+      .gen-input { width: 100%; }
+      .pagination { justify-content: center; }
+    }
+
+    /* ════════════════ SMALL PHONES (< 400px) ════════════════ */
+    @media (max-width: 399px) {
+      .analytics-grid { grid-template-columns: repeat(2,1fr); gap: 8px; }
+      .a-card-num { font-size: 22px; }
+      .stat-cards { grid-template-columns: repeat(2,1fr); }
+    }
+
+    /* iOS safe area */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .sidebar-footer { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+      #mobileTopbar { padding-top: env(safe-area-inset-top); height: calc(var(--topbar-h) + env(safe-area-inset-top)); }
+      #mainContent { padding-top: calc(var(--topbar-h) + env(safe-area-inset-top) + 16px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>GAMEVAULT</h1>
+    <p>Admin Portal — Secure Access</p>
+    <input type="password" id="adminPass" class="access-input" placeholder="Administrator password" autocomplete="current-password">
+    <div id="loginError" class="access-error"></div>
+    <button id="adminLoginBtn" class="verify-btn">Authenticate</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ADMIN SHELL (post-login)
+══════════════════════════════════════ -->
+<div id="adminShell">
+  <!-- MOBILE TOPBAR -->
+  <div id="mobileTopbar">
+    <button id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="m-logo">GAMEVAULT ADMIN</span>
+    <span id="mobilePendingBadge"></span>
+  </div>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div id="sidebarOverlay"></div>
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      GAMEVAULT
+      <span>Admin Portal</span>
+    </div>
+
+    <div class="nav-section">Overview</div>
+    <button class="nav-item active" data-section="dashboard">
+      <span class="ni">✅</span> Dashboard
+    </button>
+
+    <div class="nav-section">Content</div>
+    <button class="nav-item" data-section="games">
+      <span class="ni">🎮</span> Game Management
+    </button>
+    <button class="nav-item" data-section="announcements">
+      <span class="ni">📢</span> Announcements
+    </button>
+
+    <div class="nav-section">Access</div>
+    <button class="nav-item" data-section="orders">
+      <span class="ni">🛒</span> Orders
+      <span id="pendingOrdersBadge" style="display:none; margin-left:auto; background:var(--warning); color:#0f172a; font-size:10px; font-weight:800; padding:2px 7px; border-radius:20px;"></span>
+    </button>
+    <button class="nav-item" data-section="codes">
+      <span class="ni">🗝️</span> Access Codes
+    </button>
+
+    <div class="sidebar-footer">
+      <button class="nav-item" id="logoutBtn" style="color: var(--danger); width:100%;">
+        <span class="ni"></span> Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main id="mainContent">
+
+    <!-- ─── DASHBOARD ─── -->
+    <section class="admin-section active" id="sec-dashboard">
+      <div class="topbar">
+        <h2> Dashboard</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary btn-sm" id="refreshDashBtn"> Refresh</button>
+        </div>
+      </div>
+
+      <div class="analytics-grid" id="analyticsCards">
+        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-games">—</div><div class="a-card-label">Total Games</div></div>
+        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-featured">—</div><div class="a-card-label">Featured</div></div>
+        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-downloads">—</div><div class="a-card-label">Total Downloads</div></div>
+        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-announcements">—</div><div class="a-card-label">Announcements</div></div>
+        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-codes">—</div><div class="a-card-label">Access Codes</div></div>
+        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-active-codes">—</div><div class="a-card-label">Active Users</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3 class="panel-title">Recent Games</h3>
+          <button class="btn btn-primary btn-sm" data-section="games" id="dashGoGames">+ Add Game</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="recentGamesTable">
+            <thead><tr><th>Game</th><th>Category</th><th>Downloads</th><th>Status</th><th>Featured</th></tr></thead>
+            <tbody><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── GAME MANAGEMENT ─── -->
+    <section class="admin-section" id="sec-games">
+      <div class="topbar">
+        <h2> Game Management</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="openAddGameBtn">+ Add Game</button>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="panel" style="padding: 14px 18px; margin-bottom: 14px;">
+        <div class="filter-bar" style="margin-bottom: 0;">
+          <input type="text" id="gameSearch" class="search-box" placeholder=" Search games...">
+          <select id="gameCatFilter" class="filter-select">
+            <option value="">All Categories</option>
+            <option>Action</option><option>Adventure</option><option>RPG</option><option>JRPG</option>
+            <option>Shooter</option><option>Horror</option><option>Survival</option><option>Simulation</option>
+            <option>Strategy</option><option>Racing</option><option>Fighting</option><option>Sports</option>
+            <option>Indie</option><option>Platformer</option><option>Sandbox</option><option>Open World</option>
+            <option>Souls-like</option><option>Roguelike</option><option>Co-op</option><option>Tactical</option>
+            <option>Sci-Fi</option><option>Exploration</option><option>Card Game</option>
+          </select>
+          <select id="gameStatusFilter" class="filter-select">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="hidden">Hidden</option>
+            <option value="coming-soon">Coming Soon</option>
+          </select>
+          <select id="gameFeaturedFilter" class="filter-select">
+            <option value="">All</option>
+            <option value="true">Featured Only</option>
+            <option value="false">Non-Featured</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" id="refreshGamesBtn"> Refresh</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Thumb</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Downloads</th>
+              <th>Status</th>
+              <th>Featured</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="gamesTableBody">
+            <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="gamesPagination"></div>
+    </section>
+
+    <!-- ─── ANNOUNCEMENTS ─── -->
+    <section class="admin-section" id="sec-announcements">
+      <div class="topbar">
+        <h2> Announcements</h2>
+        <button class="btn btn-primary" id="openAddAnnBtn">+ New Announcement</button>
+      </div>
+      <div id="announcementsList">
+        <div style="text-align:center; padding:32px; color: var(--text-muted);"><div class="spinner"></div></div>
+      </div>
+    </section>
+
+    <!-- ─── ORDERS ─── -->
+    <section class="admin-section" id="sec-orders">
+      <div class="topbar">
+        <h2>🛒 Payment Orders</h2>
+        <div class="topbar-actions">
+          <select id="orderStatusFilter" class="filter-select">
+            <option value="all">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" id="refreshOrdersBtn">⟳ Refresh</button>
+        </div>
+      </div>
+      <div class="stat-cards" id="orderStatCards"></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order ID</th><th>Plan</th><th>Amount</th>
+              <th>Email</th><th>GCash Ref</th><th>Submitted</th>
+              <th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── ACCESS CODES (existing system) ─── -->
+    <section class="admin-section" id="sec-codes">
+      <div class="topbar">
+        <h2> Access Codes</h2>
+      </div>
+
+      <div class="stat-cards" id="statCards">
+        <div class="stat-card"><div class="stat-number">—</div><div style="font-size:12px; color:var(--text-muted);">Loading...</div></div>
+      </div>
+
+      <div class="generate-panel">
+        <h3 style="margin:0 0 14px; font-size:15px;">Generate Codes</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <input type="number" id="expiryDays" placeholder="Expiry (days, optional)" min="1" class="gen-input" style="width:190px;">
+          <input type="number" id="bulkCount" placeholder="Quantity (1–50)" value="1" min="1" max="50" class="gen-input" style="width:150px;">
+          <button id="genSingleBtn" class="btn-admin btn-admin-primary">+ Single</button>
+          <button id="genBulkBtn" class="btn-admin btn-admin-primary">Bulk</button>
+          <button id="deleteExpiredBtn" class="btn-admin btn-admin-danger">Delete All Expired</button>
+        </div>
+        <div id="genMsg" style="font-size:13px; color:var(--text-muted); margin-top:12px;"></div>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; align-items:center;">
+        <div class="filter-group">
+          <label>Filter:</label>
+          <select id="statusFilter" class="status-filter">
+            <option value="all">All Codes</option>
+            <option value="used">Used</option>
+            <option value="unused">Unused</option>
+            <option value="disabled">Disabled</option>
+            <option value="expired">Expired</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <input type="text" id="searchCodes" class="search-box" placeholder="Search code or session..." style="width:200px; border-radius:30px;">
+          <button id="refreshCodesBtn" class="btn-admin" style="padding:6px 12px; font-size:12px;"></button>
+        </div>
+      </div>
+
+      <div style="overflow-x:auto; border-radius:var(--radius); border:1px solid var(--border);">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Code</th><th>Status</th><th>Enable/Disable</th><th>Used By</th><th>Activation</th><th>Expires</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="codesTableBody"><tr><td colspan="7" style="text-align:center; padding:24px;"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════
+     MODALS
+══════════════════════════════════════ -->
+
+<!-- Add/Edit Game Modal -->
+<div class="modal-overlay" id="gameModal">
+  <div class="modal-box modal-lg">
+    <div class="modal-head">
+      <h3 id="gameModalTitle">Add New Game</h3>
+      <button class="modal-close" data-close="gameModal">✕</button>
+    </div>
+
+    <input type="hidden" id="editGameId">
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Game Name *</label>
+        <input type="text" id="gameName" class="form-control" placeholder="e.g. Elden Ring">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select id="gameCategory" class="form-control">
+          <option value="">Select category...</option>
+          <option>Action</option><option>Adventure</option><option>RPG</option><option>JRPG</option>
+          <option>Shooter</option><option>Horror</option><option>Survival</option><option>Simulation</option>
+          <option>Strategy</option><option>Racing</option><option>Fighting</option><option>Sports</option>
+          <option>Indie</option><option>Platformer</option><option>Sandbox</option><option>Open World</option>
+          <option>Souls-like</option><option>Roguelike</option><option>Co-op</option><option>Tactical</option>
+          <option>Sci-Fi</option><option>Exploration</option><option>Card Game</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea id="gameDesc" class="form-control" placeholder="Short game description..."></textarea>
+    </div>
+
+    <!-- Thumbnail image -->
+    <div class="form-group">
+      <label class="form-label">Thumbnail Image</label>
+      <div class="upload-tabs">
+        <button class="upload-tab active" data-tab="url"> Paste URL</button>
+        <button class="upload-tab" data-tab="upload"> Upload File</button>
+      </div>
+      <div class="upload-panel active" id="tabUrl">
+        <input type="text" id="gameThumb" class="form-control" placeholder="https://example.com/cover.jpg">
+      </div>
+      <div class="upload-panel" id="tabUpload">
+        <div class="drop-zone" id="dropZone">
+          <div> Click or drag image here</div>
+          <div style="margin-top:6px; font-size:11px; color: var(--text-muted);">PNG, JPG, WEBP supported</div>
+          <input type="file" id="thumbFile" accept="image/*" style="display:none;">
+        </div>
+        <div id="uploadProgress" style="margin-top:8px; font-size:12px; color: var(--text-muted);"></div>
+      </div>
+
+      <div style="margin-top:12px; display:flex; align-items:flex-start; gap:14px;">
+        <img id="thumbPreview" class="img-preview-box" src="" alt="" onerror="this.src=''" style="display:none;">
+        <div style="font-size:11px; color: var(--text-muted); padding-top:4px;">Preview updates as you type the URL.</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Download URL *</label>
+      <input type="text" id="gameDownloadUrl" class="form-control" placeholder="https://...">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select id="gameStatus" class="form-control">
+          <option value="active">Active (visible)</option>
+          <option value="hidden">Hidden</option>
+          <option value="coming-soon">Coming Soon</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:12px; margin-top:28px;">
+        <label class="toggle-sw">
+          <input type="checkbox" id="gameFeatured">
+          <span class="toggle-track"></span>
+        </label>
+        <span style="font-size:13px;">Featured on Homepage</span>
+      </div>
+    </div>
+
+    <div id="gameFormError" style="color: var(--danger); font-size:13px; margin-top:4px;"></div>
+
+    <div class="modal-footer-btns">
+      <button class="btn btn-secondary" data-close="gameModal">Cancel</button>
+      <button class="btn btn-primary" id="saveGameBtn"> Save Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Game Confirm Modal -->
+<div class="modal-overlay" id="deleteGameModal">
+  <div class="modal-box modal-sm">
+    <div class="confirm-icon"></div>
+    <div class="confirm-msg">You're about to permanently delete</div>
+    <div class="confirm-name" id="deleteGameName">—</div>
+    <p style="text-align:center; font-size:12px; color: var(--text-muted); margin-bottom:20px;">This action cannot be undone.</p>
+    <div class="modal-footer-btns" style="justify-content:center;">
+      <button class="btn btn-secondary" data-close="deleteGameModal">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteGameBtn">Delete Permanently</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Announcement Modal -->
+<div class="modal-overlay" id="annModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="annModalTitle">New Announcement</h3>
+      <button class="modal-close" data-close="annModal">✕</button>
+    </div>
+    <input type="hidden" id="editAnnId">
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input type="text" id="annTitle" class="form-control" placeholder="Announcement title...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Message *</label>
+      <textarea id="annMessage" class="form-control" placeholder="Announcement content..."></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="annType" class="form-control">
+          <option value="info"> Info</option>
+          <option value="update"> Update</option>
+          <option value="event"> Event</option>
+          <option value="alert"> Alert</option>
+        </select>
+      </div>
+      <div class="form-group" style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+        <div style="display:flex; align-items:center; gap:12px; margin-top:22px;">
+          <label class="toggle-sw">
+            <input type="checkbox" id="annActive" checked>
+            <span class="toggle-track"></span>
+          </label>
+          <span style="font-size:13px;">Active (shown on homepage)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <label class="toggle-sw">
+            <input type="checkbox" id="annPinned">
+            <span class="toggle-track"></span>
+          </label>
+          <span style="font-size:13px;"> Pinned (always on top)</span>
+        </div>
+      </div>
+    </div>
+    <div id="annFormError" style="color: var(--danger); font-size:13px;"></div>
+    <div class="modal-footer-btns">
+      <button class="btn btn-secondary" data-close="annModal">Cancel</button>
+      <button class="btn btn-primary" id="saveAnnBtn"> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Announcement Confirm -->
+<div class="modal-overlay" id="deleteAnnModal">
+  <div class="modal-box modal-sm">
+    <div class="confirm-icon"></div>
+    <div class="confirm-msg">Delete announcement?</div>
+    <div class="confirm-name" id="deleteAnnTitle">—</div>
+    <div class="modal-footer-btns" style="justify-content:center;">
+      <button class="btn btn-secondary" data-close="deleteAnnModal">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteAnnBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
+<!-- RAW_CATALOG for game management -->
+<script src="js/index-app.js"></script>
+
+<!-- ══════════════════════════════════════
+     FIREBASE + ADMIN LOGIC
+══════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
+    query, orderBy, serverTimestamp, Timestamp, where, onSnapshot, increment, getDoc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCMKY0LTMwcVW__SkhxGBz3rcvjvWjUGtU",
+    authDomain: "gamevault-380f7.firebaseapp.com",
+    projectId: "gamevault-380f7",
+    storageBucket: "gamevault-380f7.firebasestorage.app",
+    messagingSenderId: "533825597908",
+    appId: "1:533825597908:web:598d526a9dc4c6ea6de641",
+    measurementId: "G-SKDJVGJ4S0"
+  };
+
+  const ADMIN_PASSWORD = "Admin@GameVault2026!";
+  const GAMES_PER_PAGE = 20;
+
+  /* Login rate limiter — max 5 attempts per 5 minutes */
+  const _lr = { c: 0, t: 0, locked: false };
+  function _loginAllowed() {
+    const now = Date.now();
+    if (_lr.locked && now < _lr.t) return false;
+    if (now > _lr.t) { _lr.c = 0; _lr.t = now + 300000; _lr.locked = false; }
+    _lr.c++;
+    if (_lr.c > 5) { _lr.locked = true; _lr.t = Date.now() + 300000; return false; }
+    return true;
+  }
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  /* ════════════════════════════════════
+     STATE
+  ════════════════════════════════════ */
+  let adminAuthenticated = false;
+  let currentSection = 'dashboard';
+  let allGames = [];
+  let gamesPage = 1;
+  let pendingDeleteGameId = null;
+  let pendingDeleteAnnId = null;
+  let dashSnapshotUnsub = null;
+
+  /* ════════════════════════════════════
+     UTILS
+  ════════════════════════════════════ */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function generateCodeString() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 12; i++) {
+      if (i === 4 || i === 8) code += '-';
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+  }
+
+  function toast(msg, type = 'info') {
+    const icons = { success: '', error: '', info: '' };
+    const el = document.createElement('div');
+    el.className = `toast toast-${type}`;
+    el.innerHTML = `<span>${icons[type]}</span> <span>${escapeHtml(msg)}</span>`;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  function statusBadge(status) {
+    const map = { active: 'badge-active', hidden: 'badge-hidden', 'coming-soon': 'badge-coming' };
+    const labels = { active: '✓ Active', hidden: '○ Hidden', 'coming-soon': ' Soon' };
+    return `<span class="badge ${map[status] || 'badge-hidden'}">${labels[status] || status}</span>`;
+  }
+
+  /* ════════════════════════════════════
+     AUTH
+  ════════════════════════════════════ */
+  function adminLogin(pw) {
+    if (!_loginAllowed()) {
+      document.getElementById('loginError').innerText = 'Too many attempts. Wait 5 minutes.';
+      return;
+    }
+    if (pw === ADMIN_PASSWORD) {
+      adminAuthenticated = true;
+      sessionStorage.setItem('gv_admin', '1');
+      showShell();
+    } else {
+      document.getElementById('loginError').innerText = 'Incorrect password.';
+    }
+  }
+
+  function adminLogout() {
+    adminAuthenticated = false;
+    sessionStorage.removeItem('gv_admin');
+    if (dashSnapshotUnsub) dashSnapshotUnsub();
+    if (ordersUnsub) { ordersUnsub(); ordersUnsub = null; }
+    document.getElementById('adminShell').classList.remove('active');
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('adminPass').value = '';
+  }
+
+  function showShell() {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('adminShell').classList.add('active');
+    startOrdersBadgeListener();
+    navigateTo('dashboard');
+  }
+
+  /* ════════════════════════════════════
+     NAVIGATION
+  ════════════════════════════════════ */
+  function navigateTo(section) {
+    currentSection = section;
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item[data-section]').forEach(n => n.classList.remove('active'));
+    const sec = document.getElementById(`sec-${section}`);
+    if (sec) sec.classList.add('active');
+    const nav = document.querySelector(`.nav-item[data-section="${section}"]`);
+    if (nav) nav.classList.add('active');
+
+    if (section === 'dashboard') loadDashboard();
+    if (section === 'games') loadGames();
+    if (section === 'announcements') loadAnnouncements();
+    if (section === 'orders') loadOrders();
+    if (section === 'codes') refreshCodesSection();
+  }
+
+  document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(btn.dataset.section));
+  });
+  document.getElementById('logoutBtn').addEventListener('click', adminLogout);
+
+  /* ════════════════════════════════════
+     DASHBOARD ANALYTICS
+  ════════════════════════════════════ */
+  async function loadDashboard() {
+    // Realtime snapshot on games for analytics
+    if (dashSnapshotUnsub) dashSnapshotUnsub();
+
+    dashSnapshotUnsub = onSnapshot(collection(db, 'games'), snap => {
+      const games = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const featured = games.filter(g => g.featured).length;
+      const totalDl = games.reduce((a, g) => a + (g.downloads || 0), 0);
+      document.getElementById('stat-games').textContent = games.length;
+      document.getElementById('stat-featured').textContent = featured;
+      document.getElementById('stat-downloads').textContent = totalDl.toLocaleString();
+
+      // Recent games table
+      const recent = [...games].sort((a, b) => {
+        const ta = a.created_at?.seconds || 0;
+        const tb = b.created_at?.seconds || 0;
+        return tb - ta;
+      }).slice(0, 8);
+      const tbody = document.querySelector('#recentGamesTable tbody');
+      tbody.innerHTML = recent.length ? recent.map(g => `
+        <tr>
+          <td><strong>${escapeHtml(g.name)}</strong></td>
+          <td><span class="badge badge-hidden" style="font-size:10px;">${escapeHtml(g.category)}</span></td>
+          <td><span class="dl-count"> ${(g.downloads||0).toLocaleString()}</span></td>
+          <td>${statusBadge(g.status || 'active')}</td>
+          <td>${g.featured ? '<span class="badge badge-featured"> Yes</span>' : '—'}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding:20px;">No games yet.</td></tr>';
+    });
+
+    // Announcements count
+    const annSnap = await getDocs(query(collection(db, 'announcements'), where('active', '==', true)));
+    document.getElementById('stat-announcements').textContent = annSnap.size;
+
+    // Codes stats
+    const codesSnap = await getDocs(collection(db, 'codes'));
+    const codes = codesSnap.docs.map(d => d.data());
+    document.getElementById('stat-codes').textContent = codes.length;
+    document.getElementById('stat-active-codes').textContent = codes.filter(c => c.status === 'used').length;
+  }
+
+  document.getElementById('refreshDashBtn').addEventListener('click', loadDashboard);
+  document.getElementById('dashGoGames').addEventListener('click', () => navigateTo('games'));
+
+  /* ════════════════════════════════════
+     GAME MANAGEMENT
+  ════════════════════════════════════ */
+  async function loadGames() {
+    const tbody = document.getElementById('gamesTableBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+
+    // Always load RAW_CATALOG as the base
+    const catalog = (window.GAMES_CATALOG || []).map(g => ({
+      ...g,
+      id: String(g.id),
+      status: g.status || 'active',
+      downloads: g.downloads || 0,
+      featured: g.featured || false,
+      _source: 'catalog'
+    }));
+
+    try {
+      // Merge Firestore games on top (Firestore entries override catalog by name)
+      const snap = await getDocs(collection(db, 'games'));
+      const firestoreGames = snap.docs.map(d => ({ id: d.id, _source: 'firestore', ...d.data() }));
+      const firestoreNames = new Set(firestoreGames.map(g => g.name?.toLowerCase()));
+      const catalogOnly = catalog.filter(g => !firestoreNames.has(g.name?.toLowerCase()));
+      allGames = [...firestoreGames, ...catalogOnly];
+    } catch (err) {
+      // Firestore failed — show catalog only
+      allGames = catalog;
+      toast(`Firestore unavailable, showing local catalog (${catalog.length} games)`, 'info');
+    }
+
+    gamesPage = 1;
+    renderGamesTable();
+  }
+
+  function getFilteredGames() {
+    const search = (document.getElementById('gameSearch')?.value || '').toLowerCase();
+    const cat = document.getElementById('gameCatFilter')?.value || '';
+    const status = document.getElementById('gameStatusFilter')?.value || '';
+    const feat = document.getElementById('gameFeaturedFilter')?.value || '';
+    return allGames.filter(g => {
+      if (search && !g.name?.toLowerCase().includes(search) && !g.category?.toLowerCase().includes(search)) return false;
+      if (cat && g.category !== cat) return false;
+      if (status && (g.status || 'active') !== status) return false;
+      if (feat !== '') {
+        if (feat === 'true' && !g.featured) return false;
+        if (feat === 'false' && g.featured) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderGamesTable() {
+    const filtered = getFilteredGames();
+    const total = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(total / GAMES_PER_PAGE));
+    if (gamesPage > totalPages) gamesPage = totalPages;
+    const start = (gamesPage - 1) * GAMES_PER_PAGE;
+    const pageGames = filtered.slice(start, start + GAMES_PER_PAGE);
+
+    const tbody = document.getElementById('gamesTableBody');
+    if (!pageGames.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding:28px;">No games found.</td></tr>';
+    } else {
+      tbody.innerHTML = pageGames.map(g => `
+        <tr>
+          <td>
+            <img class="game-thumb-sm" src="${escapeHtml(g.thumb || '')}" alt=""
+              onerror="this.src='https://placehold.co/38x52/0f1119/2dd4bf?text=?'" loading="lazy">
+           </td>
+          <td><strong>${escapeHtml(g.name)}</strong></td>
+          <td><span class="badge badge-hidden" style="font-size:10px;">${escapeHtml(g.category || '—')}</span></td>
+          <td><span class="dl-count"> ${(g.downloads||0).toLocaleString()}</span></td>
+          <td>${statusBadge(g.status || 'active')}</td>
+          <td>
+            <label class="toggle-sw">
+              <input type="checkbox" class="feat-toggle" data-id="${g.id}" ${g.featured ? 'checked' : ''}>
+              <span class="toggle-track"></span>
+            </label>
+           </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-secondary btn-sm edit-game-btn" data-id="${g.id}"> Edit</button>
+              <button class="btn btn-danger btn-sm del-game-btn" data-id="${g.id}" data-name="${escapeHtml(g.name)}"></button>
+            </div>
+           </td>
+        </tr>
+      `).join('');
+    }
+
+    // Pagination
+    const pag = document.getElementById('gamesPagination');
+    if (totalPages <= 1) { pag.innerHTML = ''; }
+    else {
+      let html = `<span class="page-info">${total} games, page ${gamesPage}/${totalPages}</span>`;
+      html += `<button class="page-btn" ${gamesPage===1?'disabled':''} id="prevPage">‹ Prev</button>`;
+      for (let p = Math.max(1, gamesPage-2); p <= Math.min(totalPages, gamesPage+2); p++) {
+        html += `<button class="page-btn ${p===gamesPage?'active':''}" data-page="${p}">${p}</button>`;
+      }
+      html += `<button class="page-btn" ${gamesPage===totalPages?'disabled':''} id="nextPage">Next ›</button>`;
+      pag.innerHTML = html;
+
+      pag.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => { gamesPage = parseInt(b.dataset.page); renderGamesTable(); }));
+      pag.querySelector('#prevPage')?.addEventListener('click', () => { if(gamesPage>1){gamesPage--;renderGamesTable();} });
+      pag.querySelector('#nextPage')?.addEventListener('click', () => { if(gamesPage<totalPages){gamesPage++;renderGamesTable();} });
+    }
+
+    // Featured toggles
+    tbody.querySelectorAll('.feat-toggle').forEach(toggle => {
+      toggle.addEventListener('change', async () => {
+        const id = toggle.dataset.id;
+        const val = toggle.checked;
+        try {
+          await updateDoc(doc(db, 'games', id), { featured: val });
+          const game = allGames.find(g => g.id === id);
+          if (game) game.featured = val;
+          toast(val ? ' Game featured!' : 'Game unfeatured', 'success');
+        } catch { toast('Failed to update featured status', 'error'); toggle.checked = !val; }
+      });
+    });
+
+    // Edit buttons
+    tbody.querySelectorAll('.edit-game-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditGame(btn.dataset.id));
+    });
+
+    // Delete buttons
+    tbody.querySelectorAll('.del-game-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pendingDeleteGameId = btn.dataset.id;
+        document.getElementById('deleteGameName').textContent = btn.dataset.name;
+        openModal('deleteGameModal');
+      });
+    });
+  }
+
+  // Filters / search
+  ['gameSearch','gameCatFilter','gameStatusFilter','gameFeaturedFilter'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => { gamesPage = 1; renderGamesTable(); });
+    document.getElementById(id)?.addEventListener('change', () => { gamesPage = 1; renderGamesTable(); });
+  });
+  document.getElementById('refreshGamesBtn').addEventListener('click', loadGames);
+
+  /* ── Add Game Modal ── */
+  function resetGameForm() {
+    ['editGameId','gameName','gameDesc','gameThumb','gameDownloadUrl'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('gameCategory').value = '';
+    document.getElementById('gameStatus').value = 'active';
+    document.getElementById('gameFeatured').checked = false;
+    document.getElementById('gameFormError').textContent = '';
+    document.getElementById('thumbPreview').style.display = 'none';
+    document.getElementById('thumbPreview').src = '';
+  }
+
+  document.getElementById('openAddGameBtn').addEventListener('click', () => {
+    resetGameForm();
+    document.getElementById('gameModalTitle').textContent = 'Add New Game';
+    openModal('gameModal');
+  });
+
+  function openEditGame(id) {
+    const game = allGames.find(g => g.id === id);
+    if (!game) return;
+    resetGameForm();
+    document.getElementById('editGameId').value = id;
+    document.getElementById('editGameId').dataset.source = game._source || 'catalog';
+    document.getElementById('gameModalTitle').textContent =
+      game._source === 'firestore' ? 'Edit Game' : 'Edit Catalog Game (will save to Firestore)';
+    document.getElementById('gameName').value = game.name || '';
+    document.getElementById('gameCategory').value = game.category || '';
+    document.getElementById('gameDesc').value = game.desc || '';
+    document.getElementById('gameThumb').value = game.thumb || '';
+    document.getElementById('gameDownloadUrl').value = game.downloadUrl || '';
+    document.getElementById('gameStatus').value = game.status || 'active';
+    document.getElementById('gameFeatured').checked = !!game.featured;
+    if (game.thumb) {
+      const preview = document.getElementById('thumbPreview');
+      preview.src = game.thumb;
+      preview.style.display = 'block';
+    }
+    openModal('gameModal');
+  }
+
+  // Thumbnail URL preview
+  document.getElementById('gameThumb').addEventListener('input', e => {
+    const preview = document.getElementById('thumbPreview');
+    const url = e.target.value.trim();
+    if (url) { preview.src = url; preview.style.display = 'block'; }
+    else { preview.style.display = 'none'; }
+  });
+  document.getElementById('thumbPreview').addEventListener('error', function() { this.style.display = 'none'; });
+
+  // Upload tabs
+  document.querySelectorAll('.upload-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.upload-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(`tab${tab.dataset.tab.charAt(0).toUpperCase() + tab.dataset.tab.slice(1)}`).classList.add('active');
+    });
+  });
+
+  // Drop zone
+  const dropZone = document.getElementById('dropZone');
+  dropZone.addEventListener('click', () => document.getElementById('thumbFile').click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = ''; });
+  dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.borderColor = ''; handleImageUpload(e.dataTransfer.files[0]); });
+  document.getElementById('thumbFile').addEventListener('change', e => { if(e.target.files[0]) handleImageUpload(e.target.files[0]); });
+
+  function handleImageUpload(file) {
+    if (!file || !file.type.startsWith('image/')) { toast('Please select an image file', 'error'); return; }
+    const progressEl = document.getElementById('uploadProgress');
+    progressEl.textContent = 'Uploading...';
+    const path = `game-thumbs/${Date.now()}_${file.name}`;
+    const sRef = storageRef(storage, path);
+    const uploadTask = uploadBytesResumable(sRef, file);
+    uploadTask.on('state_changed',
+      snap => { progressEl.textContent = `Uploading: ${Math.round(snap.bytesTransferred/snap.totalBytes*100)}%`; },
+      err => { progressEl.textContent = `Upload failed: ${err.message}`; toast('Upload failed', 'error'); },
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        document.getElementById('gameThumb').value = url;
+        const preview = document.getElementById('thumbPreview');
+        preview.src = url; preview.style.display = 'block';
+        progressEl.textContent = ' Upload complete!';
+        // Switch to URL tab so URL is visible
+        document.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.upload-panel').forEach(p => p.classList.remove('active'));
+        document.querySelector('.upload-tab[data-tab="url"]').classList.add('active');
+        document.getElementById('tabUrl').classList.add('active');
+        toast('Image uploaded successfully!', 'success');
+      }
+    );
+  }
+
+  // Save game — saves to Firestore; catalog games get promoted to Firestore on edit
+  document.getElementById('saveGameBtn').addEventListener('click', async () => {
+    const name = document.getElementById('gameName').value.trim();
+    const category = document.getElementById('gameCategory').value;
+    const desc = document.getElementById('gameDesc').value.trim();
+    const thumb = document.getElementById('gameThumb').value.trim();
+    const downloadUrl = document.getElementById('gameDownloadUrl').value.trim();
+    const status = document.getElementById('gameStatus').value;
+    const featured = document.getElementById('gameFeatured').checked;
+    const editId = document.getElementById('editGameId').value;
+    const editSource = document.getElementById('editGameId').dataset.source || '';
+    const errEl = document.getElementById('gameFormError');
+
+    if (!name) { errEl.textContent = 'Game name is required.'; return; }
+    if (!category) { errEl.textContent = 'Category is required.'; return; }
+    if (!downloadUrl) { errEl.textContent = 'Download URL is required.'; return; }
+    errEl.textContent = '';
+
+    const btn = document.getElementById('saveGameBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    const data = { name, category, desc, thumb: thumb || null, downloadUrl, status, featured };
+
+    try {
+      if (editId && editSource === 'firestore') {
+        // Update existing Firestore doc
+        await updateDoc(doc(db, 'games', editId), data);
+        const idx = allGames.findIndex(g => g.id === editId);
+        if (idx !== -1) allGames[idx] = { ...allGames[idx], ...data };
+        toast('Game updated!', 'success');
+      } else {
+        // New game OR catalog game being promoted to Firestore
+        data.downloads = 0;
+        data.created_at = serverTimestamp();
+        const ref = await addDoc(collection(db, 'games'), data);
+        // Remove old catalog entry if this was a catalog edit
+        if (editId) allGames = allGames.filter(g => g.id !== editId);
+        allGames.unshift({ id: ref.id, _source: 'firestore', ...data });
+        toast(editId ? 'Game saved to Firestore!' : 'Game added!', 'success');
+      }
+      closeModal('gameModal');
+      renderGamesTable();
+    } catch (err) {
+      errEl.textContent = `Error: ${err.message}`;
+      toast('Failed to save game', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = ' Save Game';
+    }
+  });
+
+  // Delete game
+  document.getElementById('confirmDeleteGameBtn').addEventListener('click', async () => {
+    if (!pendingDeleteGameId) return;
+    const btn = document.getElementById('confirmDeleteGameBtn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+    try {
+      await deleteDoc(doc(db, 'games', pendingDeleteGameId));
+      allGames = allGames.filter(g => g.id !== pendingDeleteGameId);
+      renderGamesTable();
+      closeModal('deleteGameModal');
+      toast('Game deleted.', 'success');
+    } catch (err) {
+      toast(`Delete failed: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Delete Permanently';
+      pendingDeleteGameId = null;
+    }
+  });
+
+  /* ════════════════════════════════════
+     ANNOUNCEMENTS
+  ════════════════════════════════════ */
+  async function loadAnnouncements() {
+    const container = document.getElementById('announcementsList');
+    container.innerHTML = '<div style="text-align:center; padding:32px;"><div class="spinner"></div></div>';
+    try {
+      const snap = await getDocs(query(collection(db, 'announcements'), orderBy('created_at', 'desc')));
+      const anns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!anns.length) {
+        container.innerHTML = '<div style="text-align:center; color: var(--text-muted); padding:40px;">No announcements yet. Create one above!</div>';
+        return;
+      }
+      container.innerHTML = anns.map(a => {
+        const typeLabels = { update:' Update', event:' Event', alert:' Alert', info:' Info' };
+        const typeLabel = typeLabels[a.type] || ' Info';
+        return `
+        <div class="ann-card ${a.active ? 'ann-active' : ''}" style="margin-bottom:12px;">
+          <div style="flex:1;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
+              <h4>${escapeHtml(a.title)}</h4>
+              <span class="badge badge-hidden" style="font-size:10px;">${typeLabel}</span>
+              ${a.pinned ? '<span class="badge" style="background:rgba(125,95,255,0.2);color:#a78bfa;border:1px solid rgba(125,95,255,0.3);font-size:10px;"> Pinned</span>' : ''}
+              ${a.active ? '<span class="badge badge-active" style="font-size:10px;">Active</span>' : '<span class="badge badge-hidden" style="font-size:10px;">Inactive</span>'}
+            </div>
+            <p>${escapeHtml(a.message)}</p>
+            <div style="margin-top:8px; font-size:11px; color: var(--text-muted);">
+              ${a.created_at ? new Date(a.created_at.toDate()).toLocaleString() : ''}
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+            <button class="btn btn-secondary btn-sm edit-ann-btn" data-id="${a.id}"> Edit</button>
+            <button class="btn btn-${a.active ? 'warning' : 'success'} btn-sm toggle-ann-btn" data-id="${a.id}" data-active="${a.active}">
+              ${a.active ? ' Deactivate' : ' Activate'}
+            </button>
+            <button class="btn btn-danger btn-sm del-ann-btn" data-id="${a.id}" data-title="${escapeHtml(a.title)}"></button>
+          </div>
+        </div>`;
+      }).join('');
+
+      container.querySelectorAll('.edit-ann-btn').forEach(btn => {
+        const ann = anns.find(a => a.id === btn.dataset.id);
+        if (!ann) return;
+        btn.addEventListener('click', () => {
+          document.getElementById('editAnnId').value = ann.id;
+          document.getElementById('annTitle').value = ann.title || '';
+          document.getElementById('annMessage').value = ann.message || '';
+          document.getElementById('annType').value = ann.type || 'info';
+          document.getElementById('annActive').checked = !!ann.active;
+          document.getElementById('annPinned').checked = !!ann.pinned;
+          document.getElementById('annModalTitle').textContent = 'Edit Announcement';
+          document.getElementById('annFormError').textContent = '';
+          openModal('annModal');
+        });
+      });
+
+      container.querySelectorAll('.toggle-ann-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const newActive = btn.dataset.active !== 'true';
+          btn.disabled = true;
+          try {
+            await updateDoc(doc(db, 'announcements', btn.dataset.id), { active: newActive });
+            toast(newActive ? 'Announcement activated!' : 'Announcement deactivated.', 'success');
+            loadAnnouncements();
+          } catch { toast('Update failed', 'error'); btn.disabled = false; }
+        });
+      });
+
+      container.querySelectorAll('.del-ann-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          pendingDeleteAnnId = btn.dataset.id;
+          document.getElementById('deleteAnnTitle').textContent = btn.dataset.title;
+          openModal('deleteAnnModal');
+        });
+      });
+    } catch (err) {
+      container.innerHTML = `<div style="color: var(--danger); padding:20px;">${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  document.getElementById('openAddAnnBtn').addEventListener('click', () => {
+    document.getElementById('editAnnId').value = '';
+    document.getElementById('annTitle').value = '';
+    document.getElementById('annMessage').value = '';
+    document.getElementById('annType').value = 'info';
+    document.getElementById('annActive').checked = true;
+    document.getElementById('annPinned').checked = false;
+    document.getElementById('annModalTitle').textContent = 'New Announcement';
+    document.getElementById('annFormError').textContent = '';
+    openModal('annModal');
+  });
+
+  document.getElementById('saveAnnBtn').addEventListener('click', async () => {
+    const title   = document.getElementById('annTitle').value.trim();
+    const message = document.getElementById('annMessage').value.trim();
+    const active  = document.getElementById('annActive').checked;
+    const type    = document.getElementById('annType').value || 'info';
+    const pinned  = document.getElementById('annPinned').checked;
+    const editId  = document.getElementById('editAnnId').value;
+    const errEl   = document.getElementById('annFormError');
+    if (!title) { errEl.textContent = 'Title is required.'; return; }
+    if (!message) { errEl.textContent = 'Message is required.'; return; }
+    errEl.textContent = '';
+    const btn = document.getElementById('saveAnnBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    const data = { title, message, active, type, pinned };
+    try {
+      if (editId) {
+        await updateDoc(doc(db, 'announcements', editId), data);
+        toast('Announcement updated!', 'success');
+      } else {
+        data.created_at = serverTimestamp();
+        await addDoc(collection(db, 'announcements'), data);
+        toast('Announcement created!', 'success');
+      }
+      closeModal('annModal');
+      loadAnnouncements();
+    } catch (err) {
+      errEl.textContent = `Error: ${err.message}`;
+    } finally {
+      btn.disabled = false; btn.textContent = ' Save';
+    }
+  });
+
+  document.getElementById('confirmDeleteAnnBtn').addEventListener('click', async () => {
+    if (!pendingDeleteAnnId) return;
+    const btn = document.getElementById('confirmDeleteAnnBtn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+    try {
+      await deleteDoc(doc(db, 'announcements', pendingDeleteAnnId));
+      closeModal('deleteAnnModal');
+      toast('Announcement deleted.', 'success');
+      loadAnnouncements();
+    } catch (err) {
+      toast(`Error: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Delete';
+      pendingDeleteAnnId = null;
+    }
+  });
+
+  /* ════════════════════════════════════
+     ACCESS CODES (existing system)
+  ════════════════════════════════════ */
+  let currentCodesFilter = 'all';
+
+  async function loadAllCodes() {
+    const codesRef = collection(db, 'codes');
+    const snap = await getDocs(query(codesRef, orderBy('created_at', 'desc')));
+    let codes = [];
+    snap.forEach(d => codes.push({ id: d.id, ...d.data() }));
+    return codes;
+  }
+
+  function filterCodes(codes, filter, searchTerm) {
+    let filtered = [...codes];
+    const now = new Date();
+    if (filter !== 'all') {
+      filtered = filtered.filter(code => {
+        let effectiveStatus = code.status;
+        if (code.status !== 'disabled' && code.expires_at) {
+          const exp = code.expires_at.toDate ? code.expires_at.toDate() : new Date(code.expires_at);
+          if (now > exp) effectiveStatus = 'expired';
+        }
+        if (filter === 'used') return effectiveStatus === 'used';
+        if (filter === 'unused') return effectiveStatus === 'unused';
+        if (filter === 'disabled') return code.status === 'disabled';
+        if (filter === 'expired') return effectiveStatus === 'expired';
+        return true;
+      });
+    }
+    if (searchTerm) {
+      const s = searchTerm.toLowerCase();
+      filtered = filtered.filter(c =>
+        c.id.toLowerCase().includes(s) ||
+        (c.used_by_session || '').toLowerCase().includes(s)
+      );
+    }
+    return filtered;
+  }
+
+  function computeStats(codes) {
+    const now = new Date();
+    let used = 0, unused = 0, disabled = 0, expired = 0;
+    for (const c of codes) {
+      if (c.status === 'disabled') { disabled++; continue; }
+      if (c.expires_at) {
+        const exp = c.expires_at.toDate ? c.expires_at.toDate() : new Date(c.expires_at);
+        if (now > exp) { expired++; continue; }
+      }
+      if (c.status === 'used') used++;
+      else unused++;
+    }
+    return { total: codes.length, used, unused, disabled, expired };
+  }
+
+  function getRemainingDays(expiresAt) {
+    if (!expiresAt) return null;
+    const exp = expiresAt.toDate ? expiresAt.toDate() : new Date(expiresAt);
+    const diff = exp.getTime() - Date.now();
+    if (diff <= 0) return 0;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+
+  async function generateCodes(count = 1, expiryDays = null) {
+    let expiresAt = null;
+    if (expiryDays && expiryDays > 0) {
+      expiresAt = new Date(Date.now() + expiryDays * 86400000);
+    }
+    const created = [];
+    for (let i = 0; i < count; i++) {
+      const codeKey = generateCodeString();
+      await setDoc(doc(db, 'codes', codeKey), {
+        status: 'unused',
+        created_at: serverTimestamp(),
+        used_by_session: null,
+        used_at: null,
+        expires_at: expiresAt ? Timestamp.fromDate(expiresAt) : null
+      });
+      created.push(codeKey);
+    }
+    return created;
+  }
+
+  async function toggleCode(codeId, currentStatus) {
+    const newStatus = currentStatus === 'disabled' ? 'unused' : 'disabled';
+    await updateDoc(doc(db, 'codes', codeId), { status: newStatus });
+  }
+
+  async function deleteCode(codeId) {
+    await deleteDoc(doc(db, 'codes', codeId));
+  }
+
+  async function deleteExpiredCodes() {
+    const allCodes = await loadAllCodes();
+    const now = new Date();
+    const expiredIds = [];
+    for (const code of allCodes) {
+      if (code.status === 'disabled') continue;
+      if (code.expires_at) {
+        const exp = code.expires_at.toDate ? code.expires_at.toDate() : new Date(code.expires_at);
+        if (now > exp) expiredIds.push(code.id);
+      }
+    }
+    for (const id of expiredIds) await deleteDoc(doc(db, 'codes', id));
+    return expiredIds.length;
+  }
+
+  async function refreshCodesSection() {
+    const searchTerm = document.getElementById('searchCodes')?.value || '';
+    const filter = document.getElementById('statusFilter')?.value || 'all';
+    try {
+      const allCodes = await loadAllCodes();
+      const filteredCodes = filterCodes(allCodes, filter, searchTerm);
+      const stats = computeStats(allCodes);
+
+      document.getElementById('statCards').innerHTML = `
+        <div class="stat-card"><div class="stat-number">${stats.total}</div><div style="font-size:12px; color:var(--text-muted);">Total</div></div>
+        <div class="stat-card"><div class="stat-number">${stats.used}</div><div style="font-size:12px; color:var(--text-muted);">Used</div></div>
+        <div class="stat-card"><div class="stat-number">${stats.unused}</div><div style="font-size:12px; color:var(--text-muted);">Unused</div></div>
+        <div class="stat-card"><div class="stat-number">${stats.disabled}</div><div style="font-size:12px; color:var(--text-muted);">Disabled</div></div>
+        <div class="stat-card"><div class="stat-number">${stats.expired}</div><div style="font-size:12px; color:var(--text-muted);">Expired</div></div>
+      `;
+
+      const tbody = document.getElementById('codesTableBody');
+      if (!filteredCodes.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">No codes found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      for (const code of filteredCodes) {
+        const row = tbody.insertRow();
+        const codeCell = row.insertCell(0);
+        codeCell.innerHTML = `<span class="code-badge">${escapeHtml(code.id)}</span>
+          <button class="copy-btn" data-code="${escapeHtml(code.id)}" style="margin-left:8px;">Copy</button>`;
+
+        const now = new Date();
+        let displayStatus = code.status;
+        let isExpired = false;
+        if (code.status !== 'disabled' && code.expires_at) {
+          const exp = code.expires_at.toDate ? code.expires_at.toDate() : new Date(code.expires_at);
+          if (now > exp) { displayStatus = 'expired'; isExpired = true; }
+        }
+        const statusClass = { used:'status-used', unused:'status-unused', disabled:'status-disabled', expired:'status-disabled' };
+        row.insertCell(1).innerHTML = `<span class="status-badge ${statusClass[displayStatus]||''}">${displayStatus.toUpperCase()}</span>`;
+
+        const toggleCell = row.insertCell(2);
+        if (!isExpired) {
+          const toggleBtn = document.createElement('button');
+          toggleBtn.className = `btn-admin ${code.status==='disabled'?'btn-admin-primary':'btn-admin-warning'}`;
+          toggleBtn.innerText = code.status==='disabled' ? 'Enable' : 'Disable';
+          toggleBtn.onclick = async () => {
+            toggleBtn.disabled = true;
+            await toggleCode(code.id, code.status);
+            refreshCodesSection();
+          };
+          toggleCell.appendChild(toggleBtn);
+        } else { toggleCell.innerHTML = '—'; }
+
+        row.insertCell(3).innerHTML = code.used_by_session
+          ? `<span style="font-size:11px;" title="${escapeHtml(code.used_by_session)}">${escapeHtml(code.used_by_session.substring(0,18))}…</span>` : '—';
+        row.insertCell(4).innerHTML = code.used_at
+          ? new Date(code.used_at.toDate ? code.used_at.toDate() : code.used_at).toLocaleString() : '—';
+
+        const expiryCell = row.insertCell(5);
+        if (code.expires_at) {
+          const expDate = code.expires_at.toDate ? code.expires_at.toDate() : new Date(code.expires_at);
+          const remaining = getRemainingDays(code.expires_at);
+          let remainingText = remaining === 0 ? 'Expired' : `${remaining} day${remaining!==1?'s':''} left`;
+          const extraClass = remaining <= 3 ? 'expiry-urgent' : '';
+          expiryCell.innerHTML = `<span class="expiry-badge ${extraClass}">${expDate.toLocaleDateString()} (${remainingText})</span>`;
+        } else {
+          expiryCell.innerHTML = '<span class="expiry-badge">Never</span>';
+        }
+
+        const actCell = row.insertCell(6);
+        const delBtn = document.createElement('button');
+        delBtn.innerText = 'Delete';
+        delBtn.className = 'btn-admin btn-admin-danger';
+        delBtn.onclick = async () => {
+          if (confirm(`Delete ${code.id}? This will revoke access permanently.`)) {
+            await deleteCode(code.id);
+            refreshCodesSection();
+          }
+        };
+        actCell.appendChild(delBtn);
+      }
+
+      document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(btn.dataset.code);
+          toast(`Copied: ${btn.dataset.code}`, 'info');
+        });
+      });
+    } catch (err) {
+      document.getElementById('codesTableBody').innerHTML =
+        `<tr><td colspan="7" style="color:var(--danger); padding:20px;">Error: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  document.getElementById('genSingleBtn').addEventListener('click', async () => {
+    const expiryDays = parseInt(document.getElementById('expiryDays')?.value) || null;
+    const msgDiv = document.getElementById('genMsg');
+    msgDiv.textContent = 'Generating...';
+    try {
+      const codes = await generateCodes(1, expiryDays);
+      msgDiv.textContent = `Generated: ${codes[0]}`;
+      setTimeout(() => msgDiv.textContent = '', 5000);
+      toast('Code generated!', 'success');
+      refreshCodesSection();
+    } catch (err) { msgDiv.textContent = `Failed: ${err.message}`; }
+  });
+
+  document.getElementById('genBulkBtn').addEventListener('click', async () => {
+    const expiryDays = parseInt(document.getElementById('expiryDays')?.value) || null;
+    let count = Math.min(50, Math.max(1, parseInt(document.getElementById('bulkCount')?.value) || 1));
+    const msgDiv = document.getElementById('genMsg');
+    msgDiv.textContent = `Generating ${count} codes...`;
+    try {
+      const codes = await generateCodes(count, expiryDays);
+      msgDiv.textContent = `Generated ${codes.length}: ${codes.slice(0,3).join(', ')}${codes.length>3?'…':''}`;
+      setTimeout(() => msgDiv.textContent = '', 6000);
+      toast(`${codes.length} codes generated!`, 'success');
+      refreshCodesSection();
+    } catch (err) { msgDiv.textContent = `Failed: ${err.message}`; }
+  });
+
+  document.getElementById('deleteExpiredBtn').addEventListener('click', async () => {
+    if (!confirm('Delete ALL expired codes? This cannot be undone.')) return;
+    const msgDiv = document.getElementById('genMsg');
+    msgDiv.textContent = 'Deleting expired codes...';
+    try {
+      const n = await deleteExpiredCodes();
+      msgDiv.textContent = `Deleted ${n} expired code(s).`;
+      setTimeout(() => msgDiv.textContent = '', 3000);
+      toast(`${n} expired codes deleted`, 'success');
+      refreshCodesSection();
+    } catch (err) { msgDiv.textContent = `Error: ${err.message}`; }
+  });
+
+  document.getElementById('refreshCodesBtn').addEventListener('click', refreshCodesSection);
+  document.getElementById('statusFilter').addEventListener('change', refreshCodesSection);
+  document.getElementById('searchCodes').addEventListener('input', refreshCodesSection);
+
+  /* ════════════════════════════════════
+     ORDERS — PAYMENT VERIFICATION
+  ════════════════════════════════════ */
+  let ordersUnsub = null;
+
+  function renderOrders(orders) {
+    const tbody = document.getElementById('ordersTableBody');
+    const filterVal = document.getElementById('orderStatusFilter')?.value || 'all';
+    const filtered = filterVal === 'all' ? orders : orders.filter(o => o.status === filterVal);
+
+    const pending  = orders.filter(o => o.status === 'pending').length;
+    const approved = orders.filter(o => o.status === 'approved').length;
+    const rejected = orders.filter(o => o.status === 'rejected').length;
+
+    // Update sidebar badge
+    const badge = document.getElementById('pendingOrdersBadge');
+    badge.textContent = pending;
+    badge.style.display = pending > 0 ? 'inline-block' : 'none';
+
+    document.getElementById('orderStatCards').innerHTML = `
+      <div class="stat-card"><div class="stat-number">${orders.length}</div><div style="font-size:12px;color:var(--text-muted);">Total</div></div>
+      <div class="stat-card" style="border-color:rgba(245,158,11,0.3);"><div class="stat-number" style="color:var(--warning);">${pending}</div><div style="font-size:12px;color:var(--text-muted);">Pending</div></div>
+      <div class="stat-card" style="border-color:rgba(34,197,94,0.3);"><div class="stat-number" style="color:var(--success);">${approved}</div><div style="font-size:12px;color:var(--text-muted);">Approved</div></div>
+      <div class="stat-card" style="border-color:rgba(239,68,68,0.3);"><div class="stat-number" style="color:var(--danger);">${rejected}</div><div style="font-size:12px;color:var(--text-muted);">Rejected</div></div>`;
+
+    if (!filtered.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:28px;">No orders found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(o => {
+      const date = o.created_at ? new Date(o.created_at.toDate ? o.created_at.toDate() : o.created_at).toLocaleString() : '—';
+      const statusMap = {
+        pending:  '<span class="badge" style="background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3);">⏳ Pending</span>',
+        approved: '<span class="badge badge-active">✓ Approved</span>',
+        rejected: '<span class="badge badge-disabled">✕ Rejected</span>'
+      };
+      const actions = o.status === 'pending' ? `
+        <div class="action-buttons">
+          <button class="btn btn-success btn-sm approve-btn" data-id="${o.id}" data-email="${escapeHtml(o.email)}" data-plan="${escapeHtml(o.plan)}" data-days="${o.days}">✓ Approve</button>
+          <button class="btn btn-danger btn-sm reject-btn" data-id="${o.id}">✕ Reject</button>
+        </div>` : (o.code ? `<span class="code-badge" style="font-size:11px;">${escapeHtml(o.code)}</span>` : '—');
+      return `<tr>
+        <td style="font-size:11px;font-family:monospace;">${escapeHtml(o.orderId || o.id)}</td>
+        <td>${escapeHtml(o.plan)}</td>
+        <td style="color:var(--warning);font-weight:700;">₱${o.price}</td>
+        <td>${escapeHtml(o.email)}</td>
+        <td style="font-family:monospace;font-size:12px;">${escapeHtml(o.gcashRef)}</td>
+        <td style="font-size:11px;">${date}</td>
+        <td>${statusMap[o.status] || o.status}</td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.approve-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Approve order for ${btn.dataset.email}?\nThis will generate a code and send it automatically.`)) return;
+        btn.disabled = true; btn.textContent = '...';
+        try {
+          const code = generateCodeString();
+          const days = parseInt(btn.dataset.days);
+          const expiresAt = new Date(Date.now() + days * 86400000);
+          await setDoc(doc(db, 'codes', code), {
+            status: 'unused', created_at: serverTimestamp(),
+            used_by_session: null, used_at: null,
+            expires_at: days === 1825 ? null : Timestamp.fromDate(expiresAt)
+          });
+          await updateDoc(doc(db, 'orders', btn.dataset.id), {
+            status: 'approved', code, approved_at: serverTimestamp()
+          });
+          toast(`✓ Approved! Code: ${code}`, 'success');
+        } catch(err) {
+          toast('Approve failed: ' + err.message, 'error');
+          btn.disabled = false; btn.textContent = '✓ Approve';
+        }
+      });
+    });
+
+    tbody.querySelectorAll('.reject-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Reject this order? The client will see a rejection message.')) return;
+        btn.disabled = true;
+        try {
+          await updateDoc(doc(db, 'orders', btn.dataset.id), { status: 'rejected' });
+          toast('Order rejected.', 'info');
+        } catch(err) {
+          toast('Reject failed: ' + err.message, 'error');
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  function loadOrders() {
+    const tbody = document.getElementById('ordersTableBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+    if (ordersUnsub) ordersUnsub();
+    ordersUnsub = onSnapshot(collection(db, 'orders'), snap => {
+      const orders = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
+      renderOrders(orders);
+    }, err => {
+      tbody.innerHTML = `<tr><td colspan="8" style="color:var(--danger);padding:20px;">${escapeHtml(err.message)}</td></tr>`;
+    });
+  }
+
+  // Start orders listener as soon as admin logs in (for sidebar badge)
+  function startOrdersBadgeListener() {
+    if (ordersUnsub) return;
+    ordersUnsub = onSnapshot(collection(db, 'orders'), snap => {
+      const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+      const badge = document.getElementById('pendingOrdersBadge');
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? 'inline-block' : 'none';
+      syncMobileBadge(pending);
+    });
+  }
+
+  document.getElementById('refreshOrdersBtn')?.addEventListener('click', loadOrders);
+  document.getElementById('orderStatusFilter')?.addEventListener('change', () => {
+    if (ordersUnsub) {
+      // Re-use cached snapshot by re-triggering render from current data
+      loadOrders();
+    }
+  });
+
+  /* ════════════════════════════════════
+     MOBILE SIDEBAR
+  ════════════════════════════════════ */
+  function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('show');
+    document.getElementById('hamburgerBtn').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+    document.getElementById('hamburgerBtn').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('hamburgerBtn').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
+  // Auto-close sidebar on mobile nav click
+  document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
+    btn.addEventListener('click', () => { if (window.innerWidth < 900) closeSidebar(); });
+  });
+
+  // Sync mobile pending badge
+  function syncMobileBadge(count) {
+    const b = document.getElementById('mobilePendingBadge');
+    b.textContent = count;
+    b.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+
+  /* ════════════════════════════════════
+     MODAL CLOSE HANDLERS
+  ════════════════════════════════════ */
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+  });
+
+  /* ════════════════════════════════════
+     INIT
+  ════════════════════════════════════ */
+  window.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('gv_admin') === '1') {
+      adminAuthenticated = true;
+      showShell();
+    }
+
+    document.getElementById('adminLoginBtn').addEventListener('click', () => {
+      adminLogin(document.getElementById('adminPass').value);
+    });
+    document.getElementById('adminPass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') adminLogin(document.getElementById('adminPass').value);
+    });
+  });
+</script>
+</body>
+</html>

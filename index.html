@@ -3,94 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-Frame-Options" content="DENY">
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <title>Admin Portal — GameVault</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/jpg" href="images/Logo.jpg" />
   <style>
+    /* ═══════════════════════════════════════════════
+       ADMIN LAYOUT — SIDEBAR + CONTENT
+    ═══════════════════════════════════════════════ */
     *, *::before, *::after { box-sizing: border-box; }
+
     :root {
-      --accent: #2dd4bf; --accent2: #7c3aed;
-      --danger: #ef4444; --warning: #f59e0b; --success: #22c55e;
-      --bg-deep: #05070c; --bg-card: #0f1119; --bg-panel: #13171f;
-      --border: #1e2433; --text-muted: #8892b0; --text-main: #e2e8f0;
-      --sidebar-w: 250px; --topbar-h: 56px; --radius: 12px;
+      --accent: #2dd4bf;
+      --accent2: #7c3aed;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --bg-deep: #05070c;
+      --bg-card: #0f1119;
+      --bg-panel: #13171f;
+      --border: #1e2433;
+      --text-muted: #8892b0;
+      --text-main: #e2e8f0;
+      --sidebar-w: 240px;
+      --radius: 12px;
     }
-    html { -webkit-text-size-adjust: 100%; }
-    body { margin:0; font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-main); overflow-x: hidden; }
 
-    /* ── LOGIN ── */
-    #loginScreen { min-height: 100vh; min-height: -webkit-fill-available; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at 60% 40%, #0d1a2e 0%, #05070c 70%); padding: 20px; }
-    .login-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px 32px; width: 100%; max-width: 360px; text-align: center; }
-    .login-box h1 { font-size: 24px; font-weight: 900; background: linear-gradient(120deg,#2dd4bf,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 6px; }
-    .login-box p { color: var(--text-muted); font-size: 13px; margin: 0 0 24px; }
-    .access-input { width: 100%; padding: 12px 16px; background: #0a0d14; border: 1px solid var(--border); border-radius: 10px; color: white; font-size: 16px; outline: none; margin-bottom: 8px; -webkit-appearance: none; }
-    .access-input:focus { border-color: var(--accent); }
-    .access-error { color: #ff8a7a; font-size: 13px; margin-top: 4px; min-height: 20px; }
-    .verify-btn { width: 100%; padding: 14px; background: var(--accent); color: #0f172a; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 10px; -webkit-appearance: none; touch-action: manipulation; }
-    .verify-btn:active { opacity: 0.85; }
+    body { margin:0; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-deep); color: var(--text-main); }
 
-    /* ── SHELL ── */
+    /* ── Authenticated wrapper ── */
     #adminShell { display: none; min-height: 100vh; }
     #adminShell.active { display: flex; }
 
-    /* ── MOBILE TOPBAR ── */
-    #mobileTopbar { display: none; position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h); background: var(--bg-card); border-bottom: 1px solid var(--border); z-index: 200; align-items: center; justify-content: space-between; padding: 0 16px; }
-    #mobileTopbar .m-logo { font-size: 16px; font-weight: 900; background: linear-gradient(120deg,#2dd4bf,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    #hamburgerBtn { background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 5px; touch-action: manipulation; }
-    #hamburgerBtn span { display: block; width: 22px; height: 2px; background: var(--text-main); border-radius: 2px; transition: all 0.25s; }
-    #hamburgerBtn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    #hamburgerBtn.open span:nth-child(2) { opacity: 0; }
-    #hamburgerBtn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-    #mobilePendingBadge { background: var(--warning); color: #0f172a; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; display: none; }
+    /* ── Login screen ── */
+    #loginScreen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 60% 40%, #0d1a2e 0%, #05070c 70%);
+    }
+    .login-box {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px;
+      padding: 44px 40px; width: 360px; text-align: center;
+    }
+    .login-box h1 { font-size: 26px; font-weight: 900; background: linear-gradient(120deg, #2dd4bf, #7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; margin: 0 0 6px; }
+    .login-box p { color: var(--text-muted); font-size: 13px; margin: 0 0 28px; }
 
-    /* ── SIDEBAR OVERLAY ── */
-    #sidebarOverlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 149; backdrop-filter: blur(2px); }
-    #sidebarOverlay.show { display: block; }
-
-    /* ── SIDEBAR ── */
+    /* ── Sidebar ── */
     #sidebar {
       width: var(--sidebar-w); background: var(--bg-card); border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
-      z-index: 150; overflow-y: auto; overflow-x: hidden;
-      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-      -webkit-overflow-scrolling: touch;
+      display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; overflow-y: auto;
     }
-    .sidebar-logo { padding: 20px 18px 14px; font-size: 17px; font-weight: 900; letter-spacing: 1px; background: linear-gradient(120deg,#2dd4bf,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .sidebar-logo span { font-size: 10px; display: block; color: var(--text-muted); font-weight: 400; letter-spacing: 0; background: none; -webkit-background-clip: initial; background-clip: initial; margin-top: 2px; }
-    .nav-section { padding: 14px 14px 4px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; flex-shrink: 0; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; margin: 2px 8px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-muted); transition: all 0.15s; text-decoration: none; border: none; background: none; width: calc(100% - 16px); text-align: left; touch-action: manipulation; -webkit-tap-highlight-color: transparent; min-height: 44px; }
-    .nav-item .ni { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
-    .nav-item:hover, .nav-item:focus { background: rgba(45,212,191,0.08); color: var(--text-main); outline: none; }
+    .sidebar-logo {
+      padding: 22px 20px 16px; font-size: 18px; font-weight: 900; letter-spacing: 1px;
+      background: linear-gradient(120deg, #2dd4bf, #7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo span { font-size: 10px; display: block; color: var(--text-muted); font-weight: 400; letter-spacing: 0; background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--text-muted); }
+    .nav-section { padding: 14px 12px 4px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px; margin: 2px 8px;
+      border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-muted);
+      transition: all 0.15s; text-decoration: none; border: none; background: none; width: calc(100% - 16px); text-align: left;
+    }
+    .nav-item .ni { font-size: 16px; width: 20px; text-align: center; }
+    .nav-item:hover { background: rgba(45,212,191,0.08); color: var(--text-main); }
     .nav-item.active { background: rgba(45,212,191,0.12); color: var(--accent); }
-    .sidebar-footer { margin-top: auto; padding: 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
 
-    /* ── MAIN CONTENT ── */
-    #mainContent { margin-left: var(--sidebar-w); flex: 1; padding: 28px 28px; min-height: 100vh; min-width: 0; }
+    /* ── Main content area ── */
+    #mainContent { margin-left: var(--sidebar-w); flex: 1; padding: 28px 32px; min-height: 100vh; }
 
-    /* ── TOPBAR ── */
-    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
-    .topbar h2 { margin: 0; font-size: 20px; font-weight: 800; }
-    .topbar-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    /* ── Top bar ── */
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; gap: 12px; flex-wrap: wrap; }
+    .topbar h2 { margin: 0; font-size: 22px; font-weight: 800; }
+    .topbar-actions { display: flex; gap: 8px; align-items: center; }
 
-    /* ── SECTIONS ── */
+    /* ── Sections (tabs) ── */
     .admin-section { display: none; }
     .admin-section.active { display: block; }
 
-    /* ── ANALYTICS CARDS ── */
-    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; margin-bottom: 24px; }
-    .a-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px; position: relative; overflow: hidden; transition: border-color 0.2s, transform 0.2s; cursor: default; }
-    .a-card:hover { border-color: rgba(45,212,191,0.3); transform: translateY(-2px); }
-    .a-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,var(--accent),var(--accent2)); transform: scaleX(0); transition: transform 0.3s; }
-    .a-card:hover::after { transform: scaleX(1); }
-    .a-card-icon { font-size: 20px; margin-bottom: 8px; }
-    .a-card-num { font-size: 28px; font-weight: 900; line-height: 1; }
-    .a-card-label { font-size: 10px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
+    /* ── Stat cards ── */
+    .analytics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .a-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 16px; position: relative; overflow: hidden; transition: border-color 0.2s;
+    }
+    .a-card:hover { border-color: rgba(45,212,191,0.3); }
+    .a-card::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transform: scaleX(0); transition: transform 0.3s; }
+    .a-card:hover::before { transform: scaleX(1); }
+    .a-card-icon { font-size: 22px; margin-bottom: 10px; }
+    .a-card-num { font-size: 30px; font-weight: 900; line-height: 1; }
+    .a-card-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.8px; }
 
-    /* ── BUTTONS ── */
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.18s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; white-space: nowrap; min-height: 36px; }
+    /* ── Buttons ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.18s; }
     .btn-primary { background: var(--accent); color: #0f172a; }
     .btn-primary:hover { background: #5eead4; }
     .btn-secondary { background: var(--bg-panel); color: var(--text-main); border: 1px solid var(--border); }
@@ -100,42 +104,37 @@
     .btn-warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
     .btn-warning:hover { background: rgba(245,158,11,0.3); }
     .btn-success { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.3); }
-    .btn-sm { padding: 6px 12px; font-size: 11px; min-height: 30px; }
+    .btn-sm { padding: 5px 11px; font-size: 11px; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-admin { display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); transition: 0.15s; touch-action: manipulation; min-height: 36px; white-space: nowrap; }
-    .btn-admin-primary { background: var(--accent); color: #0f172a; border-color: var(--accent); }
-    .btn-admin-danger { background: rgba(239,68,68,0.12); color: var(--danger); border-color: rgba(239,68,68,0.3); }
-    .btn-admin-warning { background: rgba(245,158,11,0.12); color: var(--warning); border-color: rgba(245,158,11,0.3); }
 
-    /* ── FORMS ── */
+    /* ── Form elements ── */
     .form-group { margin-bottom: 16px; }
-    .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .form-control { width: 100%; padding: 11px 14px; background: #0a0d14; border: 1px solid var(--border); border-radius: 9px; color: var(--text-main); font-size: 14px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
-    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,212,191,0.1); }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control {
+      width: 100%; padding: 10px 14px; background: #0a0d14; border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text-main); font-size: 13px; outline: none; transition: border-color 0.2s;
+    }
+    .form-control:focus { border-color: var(--accent); }
     .form-control option { background: #0a0d14; }
     textarea.form-control { resize: vertical; min-height: 80px; font-family: inherit; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
-    /* ── PANELS ── */
-    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
-    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
-    .panel-title { font-size: 14px; font-weight: 700; margin: 0; }
+    /* ── Panels ── */
+    .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 22px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .panel-title { font-size: 15px; font-weight: 700; margin: 0; }
 
-    /* ── TABLES ── */
-    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 500px; }
-    .data-table th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); background: #0a0d14; white-space: nowrap; }
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .data-table th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); background: #0a0d14; }
     .data-table td { padding: 11px 12px; border-bottom: 1px solid rgba(30,36,51,0.6); vertical-align: middle; }
     .data-table tr:last-child td { border-bottom: none; }
     .data-table tr:hover td { background: rgba(45,212,191,0.03); }
-    .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 600px; }
-    .admin-table th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); background: #0a0d14; white-space: nowrap; }
-    .admin-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,36,51,0.6); }
-    .admin-table tr:hover td { background: rgba(45,212,191,0.03); }
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
 
-    /* ── BADGES ── */
-    .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    /* ── Badges ── */
+    .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
     .badge-active { background: rgba(34,197,94,0.15); color: var(--success); border: 1px solid rgba(34,197,94,0.25); }
     .badge-hidden { background: rgba(107,114,128,0.2); color: #9ca3af; border: 1px solid rgba(107,114,128,0.25); }
     .badge-coming { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.25); }
@@ -144,118 +143,132 @@
     .badge-unused { background: rgba(45,212,191,0.1); color: var(--accent); border: 1px solid rgba(45,212,191,0.2); }
     .badge-disabled { background: rgba(239,68,68,0.12); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
     .badge-expired { background: rgba(107,114,128,0.15); color: #6b7280; border: 1px solid rgba(107,114,128,0.2); }
-    .status-badge { display: inline-flex; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
-    .status-used { background: rgba(34,197,94,0.15); color: var(--success); }
-    .status-unused { background: rgba(45,212,191,0.1); color: var(--accent); }
-    .status-disabled { background: rgba(239,68,68,0.12); color: var(--danger); }
 
-    /* ── TOGGLE ── */
-    .toggle-sw { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    /* ── Game thumbnail in table ── */
+    .game-thumb-sm { width: 38px; height: 52px; object-fit: cover; border-radius: 5px; background: #0a0d14; }
+
+    /* ── Toggle switch ── */
+    .toggle-sw { position: relative; display: inline-block; width: 38px; height: 20px; }
     .toggle-sw input { opacity: 0; width: 0; height: 0; }
-    .toggle-track { position: absolute; inset: 0; background: #1e2433; border-radius: 22px; cursor: pointer; transition: 0.2s; }
-    .toggle-track::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #6b7280; border-radius: 50%; transition: 0.2s; }
-    .toggle-sw input:checked + .toggle-track { background: rgba(45,212,191,0.25); }
+    .toggle-track { position: absolute; inset: 0; background: #1e2433; border-radius: 20px; cursor: pointer; transition: 0.2s; }
+    .toggle-track::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; bottom: 3px; background: #6b7280; border-radius: 50%; transition: 0.2s; }
+    .toggle-sw input:checked + .toggle-track { background: rgba(45,212,191,0.2); }
     .toggle-sw input:checked + .toggle-track::before { background: var(--accent); transform: translateX(18px); }
 
-    /* ── MODALS ── */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(5,7,12,0.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9000; align-items: flex-end; justify-content: center; padding: 0; }
+    /* ── Modals ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(5,7,12,0.85);
+      backdrop-filter: blur(8px); z-index: 9000; align-items: center; justify-content: center;
+    }
     .modal-overlay.open { display: flex; }
-    .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px 20px 0 0; width: 100%; max-width: 100%; max-height: 92vh; overflow-y: auto; padding: 24px 20px; position: relative; -webkit-overflow-scrolling: touch; animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1); }
-    .modal-box.modal-sm { max-width: 100%; }
-    .modal-box.modal-lg { max-width: 100%; }
-    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-    .modal-head h3 { margin: 0; font-size: 16px; font-weight: 800; }
-    .modal-close { background: rgba(255,255,255,0.08); border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 0; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
-    .modal-close:hover { background: rgba(255,255,255,0.14); color: var(--text-main); }
-    .modal-footer-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
+    .modal-box {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px;
+      width: 90%; max-width: 540px; max-height: 92vh; overflow-y: auto; padding: 28px; position: relative;
+    }
+    .modal-box.modal-sm { max-width: 380px; }
+    .modal-box.modal-lg { max-width: 720px; }
+    .modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+    .modal-head h3 { margin: 0; font-size: 17px; font-weight: 800; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 4px; }
+    .modal-close:hover { color: var(--text-main); }
+    .modal-footer-btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
 
-    /* ── FILTER BAR ── */
-    .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-    .search-box { padding: 9px 14px; background: #0a0d14; border: 1px solid var(--border); border-radius: 30px; color: var(--text-main); font-size: 13px; outline: none; flex: 1; min-width: 140px; -webkit-appearance: none; }
+    /* ── Filter bar ── */
+    .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .search-box { padding: 8px 14px; background: #0a0d14; border: 1px solid var(--border); border-radius: 30px; color: var(--text-main); font-size: 12px; outline: none; width: 200px; }
     .search-box:focus { border-color: var(--accent); }
-    .filter-select { padding: 9px 12px; background: #0a0d14; border: 1px solid var(--border); border-radius: 30px; color: var(--text-main); font-size: 12px; cursor: pointer; outline: none; -webkit-appearance: none; }
-    .filter-group { display: flex; gap: 8px; align-items: center; background: #0f1119; padding: 6px 12px; border-radius: 40px; border: 1px solid var(--border); }
-    .filter-group label { font-size: 12px; color: var(--text-muted); }
-    .status-filter { background: #0a0d14; border: 1px solid var(--border); color: white; padding: 6px 12px; border-radius: 30px; font-size: 12px; cursor: pointer; -webkit-appearance: none; }
+    .filter-select { padding: 8px 12px; background: #0a0d14; border: 1px solid var(--border); border-radius: 30px; color: var(--text-main); font-size: 12px; cursor: pointer; outline: none; }
 
-    /* ── PAGINATION ── */
-    .pagination { display: flex; gap: 6px; align-items: center; margin-top: 14px; justify-content: flex-end; flex-wrap: wrap; }
-    .page-btn { padding: 6px 13px; border-radius: 8px; border: 1px solid var(--border); background: #0a0d14; color: var(--text-muted); font-size: 12px; cursor: pointer; transition: 0.15s; min-height: 32px; touch-action: manipulation; }
+    /* ── Pagination ── */
+    .pagination { display: flex; gap: 6px; align-items: center; margin-top: 16px; justify-content: flex-end; }
+    .page-btn { padding: 5px 12px; border-radius: 8px; border: 1px solid var(--border); background: #0a0d14; color: var(--text-muted); font-size: 12px; cursor: pointer; transition: 0.15s; }
     .page-btn:hover, .page-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); }
     .page-info { font-size: 12px; color: var(--text-muted); }
 
-    /* ── TOAST ── */
-    #toastContainer { position: fixed; bottom: 20px; right: 16px; left: 16px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-    .toast { padding: 12px 16px; border-radius: 12px; font-size: 13px; font-weight: 500; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); animation: toastIn 0.25s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); pointer-events: auto; }
-    .toast-success { border-color: rgba(34,197,94,0.45); }
-    .toast-error { border-color: rgba(239,68,68,0.45); }
-    .toast-info { border-color: rgba(45,212,191,0.35); }
-    @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    /* ── Toast ── */
+    #toastContainer { position: fixed; bottom: 24px; right: 24px; z-index: 99999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 18px; border-radius: 10px; font-size: 13px; font-weight: 500;
+      background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main);
+      animation: slideIn 0.25s ease; display: flex; align-items: center; gap: 8px; min-width: 220px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .toast.toast-success { border-color: rgba(34,197,94,0.4); }
+    .toast.toast-error { border-color: rgba(239,68,68,0.4); }
+    .toast.toast-info { border-color: rgba(45,212,191,0.3); }
+    @keyframes slideIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: translateX(0); } }
 
-    /* ── MISC ── */
-    .img-preview-box { width: 72px; height: 100px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border); background: #0a0d14; display: block; }
-    .confirm-icon { font-size: 40px; text-align: center; margin-bottom: 10px; }
-    .confirm-msg { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 4px; }
-    .confirm-name { text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 18px; }
+    /* ── Image preview ── */
+    .img-preview-box { width: 80px; height: 110px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border); background: #0a0d14; display: block; }
+
+    /* ── Confirm dialog ── */
+    .confirm-icon { font-size: 42px; text-align: center; margin-bottom: 12px; }
+    .confirm-msg { text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 6px; }
+    .confirm-name { text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 20px; }
+
+    /* ── Loading spinner ── */
     .spinner { width: 20px; height: 20px; border: 2px solid rgba(45,212,191,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading-row td { text-align: center; padding: 32px; color: var(--text-muted); }
-    .ann-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+
+    /* ── Announcement card ── */
+    .ann-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
     .ann-card.ann-active { border-color: rgba(45,212,191,0.25); }
-    .ann-card h4 { margin: 0 0 4px; font-size: 13px; }
+    .ann-card h4 { margin: 0 0 4px; font-size: 14px; }
     .ann-card p { margin: 0; font-size: 12px; color: var(--text-muted); }
-    .ann-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex-shrink: 0; }
-    .upload-tabs { display: flex; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
-    .upload-tab { flex: 1; padding: 9px; text-align: center; font-size: 12px; cursor: pointer; background: #0a0d14; color: var(--text-muted); transition: 0.15s; border: none; touch-action: manipulation; }
+
+    /* ── Upload zone ── */
+    .upload-tabs { display: flex; gap: 0; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+    .upload-tab { flex: 1; padding: 8px; text-align: center; font-size: 12px; cursor: pointer; background: #0a0d14; color: var(--text-muted); transition: 0.15s; border: none; }
     .upload-tab.active { background: rgba(45,212,191,0.12); color: var(--accent); font-weight: 600; }
     .upload-panel { display: none; }
     .upload-panel.active { display: block; }
-    .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: 0.2s; color: var(--text-muted); font-size: 12px; }
-    .drop-zone:hover, .drop-zone:active { border-color: var(--accent); color: var(--accent); }
+    .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px; text-align: center; cursor: pointer; transition: 0.2s; color: var(--text-muted); font-size: 12px; }
+    .drop-zone:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Downloads badge ── */
     .dl-count { font-family: monospace; font-size: 11px; background: rgba(45,212,191,0.1); color: var(--accent); padding: 2px 7px; border-radius: 20px; }
-    .game-thumb-sm { width: 36px; height: 50px; object-fit: cover; border-radius: 4px; background: #0a0d14; }
-    .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
-    .stat-cards { display: grid; grid-template-columns: repeat(auto-fill,minmax(130px,1fr)); gap: 10px; margin-bottom: 20px; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; position: relative; overflow: hidden; }
-    .stat-number { font-size: 26px; font-weight: 900; color: var(--accent); }
-    .generate-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
-    .gen-controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-    .gen-input { background: #0a0d14; border: 1px solid var(--border); padding: 9px 14px; border-radius: 30px; color: white; font-size: 13px; outline: none; -webkit-appearance: none; }
-    .gen-input:focus { border-color: var(--accent); }
-    .expiry-badge { font-family: monospace; font-size: 11px; padding: 2px 6px; border-radius: 20px; background: #1e293b; color: #a5f3fc; white-space: nowrap; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      #sidebar { transform: translateX(-100%); transition: transform 0.25s; }
+      #sidebar.open { transform: translateX(0); }
+      #mainContent { margin-left: 0; padding: 16px; }
+      .form-row, .form-row-3 { grid-template-columns: 1fr; }
+      .analytics-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Existing admin button compat */
+    .btn-admin { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-main); transition: 0.15s; }
+    .btn-admin-primary { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+    .btn-admin-danger { background: rgba(239,68,68,0.12); color: var(--danger); border-color: rgba(239,68,68,0.3); }
+    .btn-admin-warning { background: rgba(245,158,11,0.12); color: var(--warning); border-color: rgba(245,158,11,0.3); }
+    .filter-group { display: flex; gap: 8px; align-items: center; background: #0f1119; padding: 6px 12px; border-radius: 40px; border: 1px solid var(--border); }
+    .filter-group label { font-size: 12px; color: var(--text-muted); }
+    .status-filter { background: #0a0d14; border: 1px solid var(--border); color: white; padding: 6px 12px; border-radius: 30px; font-size: 12px; cursor: pointer; }
+    .expiry-badge { font-family: monospace; font-size: 11px; padding: 2px 6px; border-radius: 20px; background: #1e293b; color: #a5f3fc; }
     .expiry-urgent { background: #7f1a1a; color: #ffb347; }
-    .code-badge { font-family: monospace; letter-spacing: 1px; font-size: 12px; }
-    .copy-btn { padding: 3px 9px; font-size: 10px; border-radius: 20px; border: 1px solid var(--border); background: #1e2433; color: var(--text-muted); cursor: pointer; touch-action: manipulation; }
+    .code-badge { font-family: monospace; letter-spacing: 1px; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; position: relative; overflow: hidden; }
+    .stat-number { font-size: 28px; font-weight: 900; color: var(--accent); }
+    .generate-panel { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; }
+    .access-input { width: 100%; padding: 10px 14px; background: #0a0d14; border: 1px solid var(--border); border-radius: 9px; color: white; font-size: 14px; outline: none; margin-bottom: 8px; }
+    .access-input:focus { border-color: var(--accent); }
+    .verify-btn { width: 100%; padding: 12px; background: var(--accent); color: #0f172a; border: none; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .verify-btn:hover { background: #5eead4; }
+    .access-error { color: #ff8a7a; font-size: 13px; margin-top: 6px; min-height: 18px; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .admin-table th { padding: 10px 12px; text-align: left; color: var(--text-muted); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); background: #0a0d14; }
+    .admin-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,36,51,0.6); }
+    .admin-table tr:hover td { background: rgba(45,212,191,0.03); }
+    .action-buttons { display: flex; gap: 6px; }
+    .status-badge { display: inline-flex; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .status-used { background: rgba(34,197,94,0.15); color: var(--success); }
+    .status-unused { background: rgba(45,212,191,0.1); color: var(--accent); }
+    .status-disabled { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .copy-btn { padding: 2px 8px; font-size: 10px; border-radius: 20px; border: 1px solid var(--border); background: #1e2433; color: var(--text-muted); cursor: pointer; }
     .copy-btn:hover { background: var(--accent); color: #0f172a; border-color: var(--accent); }
-
-    /* ════════════════ DESKTOP (≥ 900px) ════════════════ */
-    @media (min-width: 900px) {
-      #mobileTopbar { display: none !important; }
-      #sidebarOverlay { display: none !important; }
-      #sidebar { transform: none !important; }
-      #mainContent { margin-left: var(--sidebar-w); padding: 28px 32px; }
-      .modal-overlay { align-items: center; padding: 20px; }
-      .modal-box { border-radius: 18px; max-width: 560px; animation: modalFadeIn 0.22s ease; }
-      .modal-box.modal-sm { max-width: 400px; }
-      .modal-box.modal-lg { max-width: 740px; }
-      @keyframes modalFadeIn { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
-      #toastContainer { left: auto; right: 24px; bottom: 24px; width: 300px; }
-      .analytics-grid { grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); }
-    }
-
-    /* Mobile layout intentionally disabled.
-       Goal: keep desktop-style layout on phones/tablets/laptops.
-       Tables remain horizontally scrollable via wrappers.
-       (Removed the previous max-width breakpoints to prevent layout collapse.)
-    */
-
-    /* iOS safe area */
-    @supports (padding-bottom: env(safe-area-inset-bottom)) {
-      .sidebar-footer { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
-      #mobileTopbar { padding-top: env(safe-area-inset-top); height: calc(var(--topbar-h) + env(safe-area-inset-top)); }
-      #mainContent { padding-top: calc(var(--topbar-h) + env(safe-area-inset-top) + 16px); }
-    }
   </style>
 </head>
 <body>
@@ -269,7 +282,7 @@
     <p>Admin Portal — Secure Access</p>
     <input type="password" id="adminPass" class="access-input" placeholder="Administrator password" autocomplete="current-password">
     <div id="loginError" class="access-error"></div>
-    <button id="adminLoginBtn" class="verify-btn" type="button">Authenticate</button>
+    <button id="adminLoginBtn" class="verify-btn">Authenticate</button>
   </div>
 </div>
 
@@ -277,18 +290,6 @@
      ADMIN SHELL (post-login)
 ══════════════════════════════════════ -->
 <div id="adminShell">
-  <!-- MOBILE TOPBAR -->
-  <div id="mobileTopbar">
-    <button id="hamburgerBtn" aria-label="Open menu">
-      <span></span><span></span><span></span>
-    </button>
-    <span class="m-logo">GAMEVAULT ADMIN</span>
-    <span id="mobilePendingBadge"></span>
-  </div>
-
-  <!-- SIDEBAR OVERLAY -->
-  <div id="sidebarOverlay"></div>
-
   <!-- SIDEBAR -->
   <nav id="sidebar">
     <div class="sidebar-logo">
@@ -298,7 +299,7 @@
 
     <div class="nav-section">Overview</div>
     <button class="nav-item active" data-section="dashboard">
-      <span class="ni">✅</span> Dashboard
+      <span class="ni">📊</span> Dashboard
     </button>
 
     <div class="nav-section">Content</div>
@@ -310,17 +311,13 @@
     </button>
 
     <div class="nav-section">Access</div>
-    <button class="nav-item" data-section="orders">
-      <span class="ni">🛒</span> Orders
-      <span id="pendingOrdersBadge" style="display:none; margin-left:auto; background:var(--warning); color:#0f172a; font-size:10px; font-weight:800; padding:2px 7px; border-radius:20px;"></span>
-    </button>
     <button class="nav-item" data-section="codes">
-      <span class="ni">🗝️</span> Access Codes
+      <span class="ni">🔑</span> Access Codes
     </button>
 
     <div class="sidebar-footer">
       <button class="nav-item" id="logoutBtn" style="color: var(--danger); width:100%;">
-        <span class="ni"></span> Logout
+        <span class="ni">🚪</span> Logout
       </button>
     </div>
   </nav>
@@ -331,19 +328,19 @@
     <!-- ─── DASHBOARD ─── -->
     <section class="admin-section active" id="sec-dashboard">
       <div class="topbar">
-        <h2> Dashboard</h2>
+        <h2>📊 Dashboard</h2>
         <div class="topbar-actions">
-          <button class="btn btn-secondary btn-sm" id="refreshDashBtn"> Refresh</button>
+          <button class="btn btn-secondary btn-sm" id="refreshDashBtn">⟳ Refresh</button>
         </div>
       </div>
 
       <div class="analytics-grid" id="analyticsCards">
-        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-games">—</div><div class="a-card-label">Total Games</div></div>
-        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-featured">—</div><div class="a-card-label">Featured</div></div>
-        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-downloads">—</div><div class="a-card-label">Total Downloads</div></div>
-        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-announcements">—</div><div class="a-card-label">Announcements</div></div>
-        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-codes">—</div><div class="a-card-label">Access Codes</div></div>
-        <div class="a-card"><div class="a-card-icon"></div><div class="a-card-num" id="stat-active-codes">—</div><div class="a-card-label">Active Users</div></div>
+        <div class="a-card"><div class="a-card-icon">🎮</div><div class="a-card-num" id="stat-games">—</div><div class="a-card-label">Total Games</div></div>
+        <div class="a-card"><div class="a-card-icon">⭐</div><div class="a-card-num" id="stat-featured">—</div><div class="a-card-label">Featured</div></div>
+        <div class="a-card"><div class="a-card-icon">⬇️</div><div class="a-card-num" id="stat-downloads">—</div><div class="a-card-label">Total Downloads</div></div>
+        <div class="a-card"><div class="a-card-icon">📢</div><div class="a-card-num" id="stat-announcements">—</div><div class="a-card-label">Announcements</div></div>
+        <div class="a-card"><div class="a-card-icon">🔑</div><div class="a-card-num" id="stat-codes">—</div><div class="a-card-label">Access Codes</div></div>
+        <div class="a-card"><div class="a-card-icon">✅</div><div class="a-card-num" id="stat-active-codes">—</div><div class="a-card-label">Active Users</div></div>
       </div>
 
       <div class="panel">
@@ -363,7 +360,7 @@
     <!-- ─── GAME MANAGEMENT ─── -->
     <section class="admin-section" id="sec-games">
       <div class="topbar">
-        <h2> Game Management</h2>
+        <h2>🎮 Game Management</h2>
         <div class="topbar-actions">
           <button class="btn btn-primary" id="openAddGameBtn">+ Add Game</button>
         </div>
@@ -372,7 +369,7 @@
       <!-- Filter bar -->
       <div class="panel" style="padding: 14px 18px; margin-bottom: 14px;">
         <div class="filter-bar" style="margin-bottom: 0;">
-          <input type="text" id="gameSearch" class="search-box" placeholder=" Search games...">
+          <input type="text" id="gameSearch" class="search-box" placeholder="🔍 Search games...">
           <select id="gameCatFilter" class="filter-select">
             <option value="">All Categories</option>
             <option>Action</option><option>Adventure</option><option>RPG</option><option>JRPG</option>
@@ -393,7 +390,7 @@
             <option value="true">Featured Only</option>
             <option value="false">Non-Featured</option>
           </select>
-          <button class="btn btn-secondary btn-sm" id="refreshGamesBtn"> Refresh</button>
+          <button class="btn btn-secondary btn-sm" id="refreshGamesBtn">⟳ Refresh</button>
         </div>
       </div>
 
@@ -421,7 +418,7 @@
     <!-- ─── ANNOUNCEMENTS ─── -->
     <section class="admin-section" id="sec-announcements">
       <div class="topbar">
-        <h2> Announcements</h2>
+        <h2>📢 Announcements</h2>
         <button class="btn btn-primary" id="openAddAnnBtn">+ New Announcement</button>
       </div>
       <div id="announcementsList">
@@ -429,41 +426,10 @@
       </div>
     </section>
 
-    <!-- ─── ORDERS ─── -->
-    <section class="admin-section" id="sec-orders">
-      <div class="topbar">
-        <h2>🛒 Payment Orders</h2>
-        <div class="topbar-actions">
-          <select id="orderStatusFilter" class="filter-select">
-            <option value="all">All Orders</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <button class="btn btn-secondary btn-sm" id="refreshOrdersBtn">⟳ Refresh</button>
-        </div>
-      </div>
-      <div class="stat-cards" id="orderStatCards"></div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Order ID</th><th>Plan</th><th>Amount</th>
-              <th>Email</th><th>GCash Ref</th><th>Submitted</th>
-              <th>Status</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="ordersTableBody">
-            <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
     <!-- ─── ACCESS CODES (existing system) ─── -->
     <section class="admin-section" id="sec-codes">
       <div class="topbar">
-        <h2> Access Codes</h2>
+        <h2>🔑 Access Codes</h2>
       </div>
 
       <div class="stat-cards" id="statCards">
@@ -472,9 +438,11 @@
 
       <div class="generate-panel">
         <h3 style="margin:0 0 14px; font-size:15px;">Generate Codes</h3>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <input type="number" id="expiryDays" placeholder="Expiry (days, optional)" min="1" class="gen-input" style="width:190px;">
-          <input type="number" id="bulkCount" placeholder="Quantity (1–50)" value="1" min="1" max="50" class="gen-input" style="width:150px;">
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+          <input type="number" id="expiryDays" placeholder="Expiry (days, optional)" min="1"
+            style="background:#0a0d14; border:1px solid var(--border); padding:8px 14px; border-radius:30px; color:white; width:190px;">
+          <input type="number" id="bulkCount" placeholder="Quantity (1–50)" value="1" min="1" max="50"
+            style="background:#0a0d14; border:1px solid var(--border); padding:8px 14px; border-radius:30px; color:white; width:150px;">
           <button id="genSingleBtn" class="btn-admin btn-admin-primary">+ Single</button>
           <button id="genBulkBtn" class="btn-admin btn-admin-primary">Bulk</button>
           <button id="deleteExpiredBtn" class="btn-admin btn-admin-danger">Delete All Expired</button>
@@ -495,7 +463,7 @@
         </div>
         <div class="filter-group">
           <input type="text" id="searchCodes" class="search-box" placeholder="Search code or session..." style="width:200px; border-radius:30px;">
-          <button id="refreshCodesBtn" class="btn-admin" style="padding:6px 12px; font-size:12px;"></button>
+          <button id="refreshCodesBtn" class="btn-admin" style="padding:6px 12px; font-size:12px;">⟳</button>
         </div>
       </div>
 
@@ -554,15 +522,15 @@
     <div class="form-group">
       <label class="form-label">Thumbnail Image</label>
       <div class="upload-tabs">
-        <button class="upload-tab active" data-tab="url"> Paste URL</button>
-        <button class="upload-tab" data-tab="upload"> Upload File</button>
+        <button class="upload-tab active" data-tab="url">🔗 Paste URL</button>
+        <button class="upload-tab" data-tab="upload">📁 Upload File</button>
       </div>
       <div class="upload-panel active" id="tabUrl">
         <input type="text" id="gameThumb" class="form-control" placeholder="https://example.com/cover.jpg">
       </div>
       <div class="upload-panel" id="tabUpload">
         <div class="drop-zone" id="dropZone">
-          <div> Click or drag image here</div>
+          <div>🖼️ Click or drag image here</div>
           <div style="margin-top:6px; font-size:11px; color: var(--text-muted);">PNG, JPG, WEBP supported</div>
           <input type="file" id="thumbFile" accept="image/*" style="display:none;">
         </div>
@@ -602,7 +570,7 @@
 
     <div class="modal-footer-btns">
       <button class="btn btn-secondary" data-close="gameModal">Cancel</button>
-      <button class="btn btn-primary" id="saveGameBtn"> Save Game</button>
+      <button class="btn btn-primary" id="saveGameBtn">💾 Save Game</button>
     </div>
   </div>
 </div>
@@ -610,7 +578,7 @@
 <!-- Delete Game Confirm Modal -->
 <div class="modal-overlay" id="deleteGameModal">
   <div class="modal-box modal-sm">
-    <div class="confirm-icon"></div>
+    <div class="confirm-icon">🗑️</div>
     <div class="confirm-msg">You're about to permanently delete</div>
     <div class="confirm-name" id="deleteGameName">—</div>
     <p style="text-align:center; font-size:12px; color: var(--text-muted); margin-bottom:20px;">This action cannot be undone.</p>
@@ -641,10 +609,10 @@
       <div class="form-group">
         <label class="form-label">Type</label>
         <select id="annType" class="form-control">
-          <option value="info"> Info</option>
-          <option value="update"> Update</option>
-          <option value="event"> Event</option>
-          <option value="alert"> Alert</option>
+          <option value="info">ℹ️ Info</option>
+          <option value="update">🔄 Update</option>
+          <option value="event">🎉 Event</option>
+          <option value="alert">🚨 Alert</option>
         </select>
       </div>
       <div class="form-group" style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
@@ -660,14 +628,14 @@
             <input type="checkbox" id="annPinned">
             <span class="toggle-track"></span>
           </label>
-          <span style="font-size:13px;"> Pinned (always on top)</span>
+          <span style="font-size:13px;">📌 Pinned (always on top)</span>
         </div>
       </div>
     </div>
     <div id="annFormError" style="color: var(--danger); font-size:13px;"></div>
     <div class="modal-footer-btns">
       <button class="btn btn-secondary" data-close="annModal">Cancel</button>
-      <button class="btn btn-primary" id="saveAnnBtn"> Save</button>
+      <button class="btn btn-primary" id="saveAnnBtn">💾 Save</button>
     </div>
   </div>
 </div>
@@ -675,7 +643,7 @@
 <!-- Delete Announcement Confirm -->
 <div class="modal-overlay" id="deleteAnnModal">
   <div class="modal-box modal-sm">
-    <div class="confirm-icon"></div>
+    <div class="confirm-icon">🗑️</div>
     <div class="confirm-msg">Delete announcement?</div>
     <div class="confirm-name" id="deleteAnnTitle">—</div>
     <div class="modal-footer-btns" style="justify-content:center;">
@@ -717,17 +685,6 @@
   const ADMIN_PASSWORD = "Admin@GameVault2026!";
   const GAMES_PER_PAGE = 20;
 
-  /* Login rate limiter — max 5 attempts per 5 minutes */
-  const _lr = { c: 0, t: 0, locked: false };
-  function _loginAllowed() {
-    const now = Date.now();
-    if (_lr.locked && now < _lr.t) return false;
-    if (now > _lr.t) { _lr.c = 0; _lr.t = now + 300000; _lr.locked = false; }
-    _lr.c++;
-    if (_lr.c > 5) { _lr.locked = true; _lr.t = Date.now() + 300000; return false; }
-    return true;
-  }
-
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const storage = getStorage(app);
@@ -762,7 +719,7 @@
   }
 
   function toast(msg, type = 'info') {
-    const icons = { success: '', error: '', info: '' };
+    const icons = { success: '✅', error: '❌', info: 'ℹ️' };
     const el = document.createElement('div');
     el.className = `toast toast-${type}`;
     el.innerHTML = `<span>${icons[type]}</span> <span>${escapeHtml(msg)}</span>`;
@@ -775,50 +732,20 @@
 
   function statusBadge(status) {
     const map = { active: 'badge-active', hidden: 'badge-hidden', 'coming-soon': 'badge-coming' };
-    const labels = { active: '✓ Active', hidden: '○ Hidden', 'coming-soon': ' Soon' };
+    const labels = { active: '✓ Active', hidden: '○ Hidden', 'coming-soon': '⏳ Soon' };
     return `<span class="badge ${map[status] || 'badge-hidden'}">${labels[status] || status}</span>`;
   }
 
   /* ════════════════════════════════════
      AUTH
   ════════════════════════════════════ */
-  function normalizeAdminInput(str) {
-    // Normalize pasted/special whitespace consistently across browsers.
-    // - Unicode NFKC handles visually similar forms
-    // - Trim removes leading/trailing spaces
-    // - Collapse internal whitespace (tabs/newlines/extra spaces)
-    // - Replace NBSP with regular space (common in mobile copy/paste)
-    return String(str ?? '')
-      .replace(/\u00A0/g, ' ')
-      .normalize('NFKC')
-      .trim()
-      .replace(/\s+/g, ' ');
-  }
-
-  // Never log raw password contents.
-  function adminLogin(rawPw) {
-    if (!_loginAllowed()) {
-      document.getElementById('loginError').innerText = 'Too many attempts. Wait 5 minutes and try again.';
-      console.warn('[Admin] Login blocked by rate limiter.');
-      return;
-    }
-
-    const normalized = normalizeAdminInput(rawPw);
-    const expected = normalizeAdminInput(ADMIN_PASSWORD);
-
-    // Debug info without revealing password.
-    console.debug('[Admin] Login attempt', {
-      inputEmpty: normalized.length === 0,
-      match: normalized === expected
-    });
-
-    if (normalized === expected) {
+  function adminLogin(pw) {
+    if (pw === ADMIN_PASSWORD) {
       adminAuthenticated = true;
       sessionStorage.setItem('gv_admin', '1');
-      document.getElementById('loginError').innerText = '';
       showShell();
     } else {
-      document.getElementById('loginError').innerText = 'Incorrect administrator code.';
+      document.getElementById('loginError').innerText = 'Incorrect password.';
     }
   }
 
@@ -826,7 +753,6 @@
     adminAuthenticated = false;
     sessionStorage.removeItem('gv_admin');
     if (dashSnapshotUnsub) dashSnapshotUnsub();
-    if (ordersUnsub) { ordersUnsub(); ordersUnsub = null; }
     document.getElementById('adminShell').classList.remove('active');
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('adminPass').value = '';
@@ -835,7 +761,6 @@
   function showShell() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminShell').classList.add('active');
-    startOrdersBadgeListener();
     navigateTo('dashboard');
   }
 
@@ -854,7 +779,6 @@
     if (section === 'dashboard') loadDashboard();
     if (section === 'games') loadGames();
     if (section === 'announcements') loadAnnouncements();
-    if (section === 'orders') loadOrders();
     if (section === 'codes') refreshCodesSection();
   }
 
@@ -889,9 +813,9 @@
         <tr>
           <td><strong>${escapeHtml(g.name)}</strong></td>
           <td><span class="badge badge-hidden" style="font-size:10px;">${escapeHtml(g.category)}</span></td>
-          <td><span class="dl-count"> ${(g.downloads||0).toLocaleString()}</span></td>
+          <td><span class="dl-count">⬇ ${(g.downloads||0).toLocaleString()}</span></td>
           <td>${statusBadge(g.status || 'active')}</td>
-          <td>${g.featured ? '<span class="badge badge-featured"> Yes</span>' : '—'}</td>
+          <td>${g.featured ? '<span class="badge badge-featured">⭐ Yes</span>' : '—'}</td>
         </tr>
       `).join('') : '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding:20px;">No games yet.</td></tr>';
     });
@@ -978,23 +902,23 @@
           <td>
             <img class="game-thumb-sm" src="${escapeHtml(g.thumb || '')}" alt=""
               onerror="this.src='https://placehold.co/38x52/0f1119/2dd4bf?text=?'" loading="lazy">
-           </td>
+          </td>
           <td><strong>${escapeHtml(g.name)}</strong></td>
           <td><span class="badge badge-hidden" style="font-size:10px;">${escapeHtml(g.category || '—')}</span></td>
-          <td><span class="dl-count"> ${(g.downloads||0).toLocaleString()}</span></td>
+          <td><span class="dl-count">⬇ ${(g.downloads||0).toLocaleString()}</span></td>
           <td>${statusBadge(g.status || 'active')}</td>
           <td>
             <label class="toggle-sw">
               <input type="checkbox" class="feat-toggle" data-id="${g.id}" ${g.featured ? 'checked' : ''}>
               <span class="toggle-track"></span>
             </label>
-           </td>
+          </td>
           <td>
             <div class="action-buttons">
-              <button class="btn btn-secondary btn-sm edit-game-btn" data-id="${g.id}"> Edit</button>
-              <button class="btn btn-danger btn-sm del-game-btn" data-id="${g.id}" data-name="${escapeHtml(g.name)}"></button>
+              <button class="btn btn-secondary btn-sm edit-game-btn" data-id="${g.id}">✏️ Edit</button>
+              <button class="btn btn-danger btn-sm del-game-btn" data-id="${g.id}" data-name="${escapeHtml(g.name)}">🗑️</button>
             </div>
-           </td>
+          </td>
         </tr>
       `).join('');
     }
@@ -1025,7 +949,7 @@
           await updateDoc(doc(db, 'games', id), { featured: val });
           const game = allGames.find(g => g.id === id);
           if (game) game.featured = val;
-          toast(val ? ' Game featured!' : 'Game unfeatured', 'success');
+          toast(val ? '⭐ Game featured!' : 'Game unfeatured', 'success');
         } catch { toast('Failed to update featured status', 'error'); toggle.checked = !val; }
       });
     });
@@ -1137,7 +1061,7 @@
         document.getElementById('gameThumb').value = url;
         const preview = document.getElementById('thumbPreview');
         preview.src = url; preview.style.display = 'block';
-        progressEl.textContent = ' Upload complete!';
+        progressEl.textContent = '✅ Upload complete!';
         // Switch to URL tab so URL is visible
         document.querySelectorAll('.upload-tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.upload-panel').forEach(p => p.classList.remove('active'));
@@ -1194,7 +1118,7 @@
       errEl.textContent = `Error: ${err.message}`;
       toast('Failed to save game', 'error');
     } finally {
-      btn.disabled = false; btn.textContent = ' Save Game';
+      btn.disabled = false; btn.textContent = '💾 Save Game';
     }
   });
 
@@ -1231,15 +1155,15 @@
         return;
       }
       container.innerHTML = anns.map(a => {
-        const typeLabels = { update:' Update', event:' Event', alert:' Alert', info:' Info' };
-        const typeLabel = typeLabels[a.type] || ' Info';
+        const typeLabels = { update:'🔄 Update', event:'🎉 Event', alert:'🚨 Alert', info:'ℹ️ Info' };
+        const typeLabel = typeLabels[a.type] || 'ℹ️ Info';
         return `
         <div class="ann-card ${a.active ? 'ann-active' : ''}" style="margin-bottom:12px;">
           <div style="flex:1;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap;">
               <h4>${escapeHtml(a.title)}</h4>
               <span class="badge badge-hidden" style="font-size:10px;">${typeLabel}</span>
-              ${a.pinned ? '<span class="badge" style="background:rgba(125,95,255,0.2);color:#a78bfa;border:1px solid rgba(125,95,255,0.3);font-size:10px;"> Pinned</span>' : ''}
+              ${a.pinned ? '<span class="badge" style="background:rgba(125,95,255,0.2);color:#a78bfa;border:1px solid rgba(125,95,255,0.3);font-size:10px;">📌 Pinned</span>' : ''}
               ${a.active ? '<span class="badge badge-active" style="font-size:10px;">Active</span>' : '<span class="badge badge-hidden" style="font-size:10px;">Inactive</span>'}
             </div>
             <p>${escapeHtml(a.message)}</p>
@@ -1248,11 +1172,11 @@
             </div>
           </div>
           <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-            <button class="btn btn-secondary btn-sm edit-ann-btn" data-id="${a.id}"> Edit</button>
+            <button class="btn btn-secondary btn-sm edit-ann-btn" data-id="${a.id}">✏️ Edit</button>
             <button class="btn btn-${a.active ? 'warning' : 'success'} btn-sm toggle-ann-btn" data-id="${a.id}" data-active="${a.active}">
-              ${a.active ? ' Deactivate' : ' Activate'}
+              ${a.active ? '🔕 Deactivate' : '🔔 Activate'}
             </button>
-            <button class="btn btn-danger btn-sm del-ann-btn" data-id="${a.id}" data-title="${escapeHtml(a.title)}"></button>
+            <button class="btn btn-danger btn-sm del-ann-btn" data-id="${a.id}" data-title="${escapeHtml(a.title)}">🗑️ Delete</button>
           </div>
         </div>`;
       }).join('');
@@ -1337,7 +1261,7 @@
     } catch (err) {
       errEl.textContent = `Error: ${err.message}`;
     } finally {
-      btn.disabled = false; btn.textContent = ' Save';
+      btn.disabled = false; btn.textContent = '💾 Save';
     }
   });
 
@@ -1603,165 +1527,6 @@
   document.getElementById('searchCodes').addEventListener('input', refreshCodesSection);
 
   /* ════════════════════════════════════
-     ORDERS — PAYMENT VERIFICATION
-  ════════════════════════════════════ */
-  let ordersUnsub = null;
-
-  function renderOrders(orders) {
-    const tbody = document.getElementById('ordersTableBody');
-    const filterVal = document.getElementById('orderStatusFilter')?.value || 'all';
-    const filtered = filterVal === 'all' ? orders : orders.filter(o => o.status === filterVal);
-
-    const pending  = orders.filter(o => o.status === 'pending').length;
-    const approved = orders.filter(o => o.status === 'approved').length;
-    const rejected = orders.filter(o => o.status === 'rejected').length;
-
-    // Update sidebar badge
-    const badge = document.getElementById('pendingOrdersBadge');
-    badge.textContent = pending;
-    badge.style.display = pending > 0 ? 'inline-block' : 'none';
-
-    document.getElementById('orderStatCards').innerHTML = `
-      <div class="stat-card"><div class="stat-number">${orders.length}</div><div style="font-size:12px;color:var(--text-muted);">Total</div></div>
-      <div class="stat-card" style="border-color:rgba(245,158,11,0.3);"><div class="stat-number" style="color:var(--warning);">${pending}</div><div style="font-size:12px;color:var(--text-muted);">Pending</div></div>
-      <div class="stat-card" style="border-color:rgba(34,197,94,0.3);"><div class="stat-number" style="color:var(--success);">${approved}</div><div style="font-size:12px;color:var(--text-muted);">Approved</div></div>
-      <div class="stat-card" style="border-color:rgba(239,68,68,0.3);"><div class="stat-number" style="color:var(--danger);">${rejected}</div><div style="font-size:12px;color:var(--text-muted);">Rejected</div></div>`;
-
-    if (!filtered.length) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:28px;">No orders found.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = filtered.map(o => {
-      const date = o.created_at ? new Date(o.created_at.toDate ? o.created_at.toDate() : o.created_at).toLocaleString() : '—';
-      const statusMap = {
-        pending:  '<span class="badge" style="background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3);">⏳ Pending</span>',
-        approved: '<span class="badge badge-active">✓ Approved</span>',
-        rejected: '<span class="badge badge-disabled">✕ Rejected</span>'
-      };
-      const actions = o.status === 'pending' ? `
-        <div class="action-buttons">
-          <button class="btn btn-success btn-sm approve-btn" data-id="${o.id}" data-email="${escapeHtml(o.email)}" data-plan="${escapeHtml(o.plan)}" data-days="${o.days}">✓ Approve</button>
-          <button class="btn btn-danger btn-sm reject-btn" data-id="${o.id}">✕ Reject</button>
-        </div>` : (o.code ? `<span class="code-badge" style="font-size:11px;">${escapeHtml(o.code)}</span>` : '—');
-      return `<tr>
-        <td style="font-size:11px;font-family:monospace;">${escapeHtml(o.orderId || o.id)}</td>
-        <td>${escapeHtml(o.plan)}</td>
-        <td style="color:var(--warning);font-weight:700;">₱${o.price}</td>
-        <td>${escapeHtml(o.email)}</td>
-        <td style="font-family:monospace;font-size:12px;">${escapeHtml(o.gcashRef)}</td>
-        <td style="font-size:11px;">${date}</td>
-        <td>${statusMap[o.status] || o.status}</td>
-        <td>${actions}</td>
-      </tr>`;
-    }).join('');
-
-    tbody.querySelectorAll('.approve-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm(`Approve order for ${btn.dataset.email}?\nThis will generate a code and send it automatically.`)) return;
-        btn.disabled = true; btn.textContent = '...';
-        try {
-          const code = generateCodeString();
-          const days = parseInt(btn.dataset.days);
-          const expiresAt = new Date(Date.now() + days * 86400000);
-          await setDoc(doc(db, 'codes', code), {
-            status: 'unused', created_at: serverTimestamp(),
-            used_by_session: null, used_at: null,
-            expires_at: days === 1825 ? null : Timestamp.fromDate(expiresAt)
-          });
-          await updateDoc(doc(db, 'orders', btn.dataset.id), {
-            status: 'approved', code, approved_at: serverTimestamp()
-          });
-          toast(`✓ Approved! Code: ${code}`, 'success');
-        } catch(err) {
-          toast('Approve failed: ' + err.message, 'error');
-          btn.disabled = false; btn.textContent = '✓ Approve';
-        }
-      });
-    });
-
-    tbody.querySelectorAll('.reject-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Reject this order? The client will see a rejection message.')) return;
-        btn.disabled = true;
-        try {
-          await updateDoc(doc(db, 'orders', btn.dataset.id), { status: 'rejected' });
-          toast('Order rejected.', 'info');
-        } catch(err) {
-          toast('Reject failed: ' + err.message, 'error');
-          btn.disabled = false;
-        }
-      });
-    });
-  }
-
-  function loadOrders() {
-    const tbody = document.getElementById('ordersTableBody');
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
-    if (ordersUnsub) ordersUnsub();
-    ordersUnsub = onSnapshot(collection(db, 'orders'), snap => {
-      const orders = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
-      renderOrders(orders);
-    }, err => {
-      tbody.innerHTML = `<tr><td colspan="8" style="color:var(--danger);padding:20px;">${escapeHtml(err.message)}</td></tr>`;
-    });
-  }
-
-  // Start orders listener as soon as admin logs in (for sidebar badge)
-  function startOrdersBadgeListener() {
-    if (ordersUnsub) return;
-    ordersUnsub = onSnapshot(collection(db, 'orders'), snap => {
-      const pending = snap.docs.filter(d => d.data().status === 'pending').length;
-      const badge = document.getElementById('pendingOrdersBadge');
-      badge.textContent = pending;
-      badge.style.display = pending > 0 ? 'inline-block' : 'none';
-      syncMobileBadge(pending);
-    });
-  }
-
-  document.getElementById('refreshOrdersBtn')?.addEventListener('click', loadOrders);
-  document.getElementById('orderStatusFilter')?.addEventListener('change', () => {
-    if (ordersUnsub) {
-      // Re-use cached snapshot by re-triggering render from current data
-      loadOrders();
-    }
-  });
-
-  /* ════════════════════════════════════
-     MOBILE SIDEBAR
-  ════════════════════════════════════ */
-  function openSidebar() {
-    document.getElementById('sidebar').classList.add('open');
-    document.getElementById('sidebarOverlay').classList.add('show');
-    document.getElementById('hamburgerBtn').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebarOverlay').classList.remove('show');
-    document.getElementById('hamburgerBtn').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  document.getElementById('hamburgerBtn').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
-  });
-  document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
-
-  // Auto-close sidebar on mobile nav click
-  document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
-    btn.addEventListener('click', () => { if (window.innerWidth < 900) closeSidebar(); });
-  });
-
-  // Sync mobile pending badge
-  function syncMobileBadge(count) {
-    const b = document.getElementById('mobilePendingBadge');
-    b.textContent = count;
-    b.style.display = count > 0 ? 'inline-block' : 'none';
-  }
-
-  /* ════════════════════════════════════
      MODAL CLOSE HANDLERS
   ════════════════════════════════════ */
   document.querySelectorAll('[data-close]').forEach(btn => {
@@ -1785,15 +1550,8 @@
     document.getElementById('adminLoginBtn').addEventListener('click', () => {
       adminLogin(document.getElementById('adminPass').value);
     });
-    // Prevent accidental form-submit/page refresh on Enter across browsers.
     document.getElementById('adminPass').addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        const btn = document.getElementById('adminLoginBtn');
-        if (!btn || btn.disabled) return;
-        btn.click();
-      }
+      if (e.key === 'Enter') adminLogin(document.getElementById('adminPass').value);
     });
   });
 </script>

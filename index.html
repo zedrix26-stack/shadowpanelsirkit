@@ -244,35 +244,11 @@
       .analytics-grid { grid-template-columns: repeat(auto-fill,minmax(155px,1fr)); }
     }
 
-    /* ════════════════ MOBILE (< 900px) ════════════════ */
-    @media (max-width: 899px) {
-      #mobileTopbar { display: flex; }
-      #sidebar { transform: translateX(-100%); top: 0; }
-      #sidebar.open { transform: translateX(0); box-shadow: 4px 0 32px rgba(0,0,0,0.6); }
-      #adminShell.active { display: block; }
-      #mainContent { margin-left: 0; padding: 16px; padding-top: calc(var(--topbar-h) + 16px); }
-      .form-row, .form-row-3 { grid-template-columns: 1fr; }
-      .analytics-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
-      .topbar { margin-bottom: 16px; }
-      .topbar h2 { font-size: 17px; }
-      .filter-bar { gap: 6px; }
-      .filter-select, .search-box { font-size: 14px; }
-      .modal-footer-btns { flex-direction: column-reverse; }
-      .modal-footer-btns .btn { width: 100%; justify-content: center; }
-      .ann-card { flex-direction: column; }
-      .ann-actions { flex-direction: row; align-items: center; width: 100%; justify-content: flex-end; }
-      .action-buttons { gap: 4px; }
-      .generate-panel .gen-controls { flex-direction: column; align-items: stretch; }
-      .gen-input { width: 100%; }
-      .pagination { justify-content: center; }
-    }
-
-    /* ════════════════ SMALL PHONES (< 400px) ════════════════ */
-    @media (max-width: 399px) {
-      .analytics-grid { grid-template-columns: repeat(2,1fr); gap: 8px; }
-      .a-card-num { font-size: 22px; }
-      .stat-cards { grid-template-columns: repeat(2,1fr); }
-    }
+    /* Mobile layout intentionally disabled.
+       Goal: keep desktop-style layout on phones/tablets/laptops.
+       Tables remain horizontally scrollable via wrappers.
+       (Removed the previous max-width breakpoints to prevent layout collapse.)
+    */
 
     /* iOS safe area */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
@@ -293,7 +269,7 @@
     <p>Admin Portal — Secure Access</p>
     <input type="password" id="adminPass" class="access-input" placeholder="Administrator password" autocomplete="current-password">
     <div id="loginError" class="access-error"></div>
-    <button id="adminLoginBtn" class="verify-btn">Authenticate</button>
+    <button id="adminLoginBtn" class="verify-btn" type="button">Authenticate</button>
   </div>
 </div>
 
@@ -806,17 +782,43 @@
   /* ════════════════════════════════════
      AUTH
   ════════════════════════════════════ */
-  function adminLogin(pw) {
+  function normalizeAdminInput(str) {
+    // Normalize pasted/special whitespace consistently across browsers.
+    // - Unicode NFKC handles visually similar forms
+    // - Trim removes leading/trailing spaces
+    // - Collapse internal whitespace (tabs/newlines/extra spaces)
+    // - Replace NBSP with regular space (common in mobile copy/paste)
+    return String(str ?? '')
+      .replace(/\u00A0/g, ' ')
+      .normalize('NFKC')
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  // Never log raw password contents.
+  function adminLogin(rawPw) {
     if (!_loginAllowed()) {
-      document.getElementById('loginError').innerText = 'Too many attempts. Wait 5 minutes.';
+      document.getElementById('loginError').innerText = 'Too many attempts. Wait 5 minutes and try again.';
+      console.warn('[Admin] Login blocked by rate limiter.');
       return;
     }
-    if (pw === ADMIN_PASSWORD) {
+
+    const normalized = normalizeAdminInput(rawPw);
+    const expected = normalizeAdminInput(ADMIN_PASSWORD);
+
+    // Debug info without revealing password.
+    console.debug('[Admin] Login attempt', {
+      inputEmpty: normalized.length === 0,
+      match: normalized === expected
+    });
+
+    if (normalized === expected) {
       adminAuthenticated = true;
       sessionStorage.setItem('gv_admin', '1');
+      document.getElementById('loginError').innerText = '';
       showShell();
     } else {
-      document.getElementById('loginError').innerText = 'Incorrect password.';
+      document.getElementById('loginError').innerText = 'Incorrect administrator code.';
     }
   }
 
@@ -1783,8 +1785,15 @@
     document.getElementById('adminLoginBtn').addEventListener('click', () => {
       adminLogin(document.getElementById('adminPass').value);
     });
+    // Prevent accidental form-submit/page refresh on Enter across browsers.
     document.getElementById('adminPass').addEventListener('keydown', e => {
-      if (e.key === 'Enter') adminLogin(document.getElementById('adminPass').value);
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const btn = document.getElementById('adminLoginBtn');
+        if (!btn || btn.disabled) return;
+        btn.click();
+      }
     });
   });
 </script>

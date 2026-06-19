@@ -22,6 +22,12 @@
           allow create, update, delete: if isAdmin();
         }
 
+        // Software — read for everyone, write only admin
+        match /software/{docId} {
+          allow read: if true;
+          allow create, update, delete: if isAdmin();
+        }
+
         // Orders — admin only
         match /orders/{docId} {
           allow read, write: if isAdmin();
@@ -698,6 +704,9 @@
     <button class="nav-item" data-section="games">
       Game Management
     </button>
+    <button class="nav-item" data-section="software">
+      Software Management
+    </button>
     <button class="nav-item" data-section="announcements">
       Announcements
     </button>
@@ -740,6 +749,7 @@
         <div class="a-card"><div class="a-card-num" id="stat-featured">—</div><div class="a-card-label">Featured</div></div>
         <div class="a-card"><div class="a-card-num" id="stat-downloads">—</div><div class="a-card-label">Total Downloads</div></div>
         <div class="a-card"><div class="a-card-num" id="stat-revenue">—</div><div class="a-card-label">Total Revenue</div></div>
+        <div class="a-card"><div class="a-card-num" id="stat-software">—</div><div class="a-card-label">Software</div></div>
         <div class="a-card"><div class="a-card-num" id="stat-announcements">—</div><div class="a-card-label">Announcements</div></div>
         <div class="a-card"><div class="a-card-num" id="stat-codes">—</div><div class="a-card-label">Access Codes</div></div>
         <div class="a-card"><div class="a-card-num" id="stat-active-codes">—</div><div class="a-card-label">Active Users</div></div>
@@ -831,6 +841,33 @@
         </table>
       </div>
       <div class="pagination" id="gamesPagination"></div>
+    </section>
+
+    <!-- ─── SOFTWARE MANAGEMENT ─── -->
+    <section class="admin-section" id="sec-software">
+      <div class="topbar">
+        <h2>Software Management</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="openAddSwBtn">+ Add Software</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Downloads</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="swTableBody">
+            <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <!-- ─── ANNOUNCEMENTS ─── -->
@@ -1043,6 +1080,63 @@
     <div class="modal-footer-btns">
       <button class="btn btn-secondary" data-close="gameModal">Cancel</button>
       <button class="btn btn-primary" id="saveGameBtn"> Save Game</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Software Modal -->
+<div class="modal-overlay" id="swModal">
+  <div class="modal-box modal-lg">
+    <div class="modal-head">
+      <h3 id="swModalTitle">Add New Software</h3>
+      <button class="modal-close" data-close="swModal">X</button>
+    </div>
+    <input type="hidden" id="editSwId">
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Software Name *</label>
+        <input type="text" id="swName" class="form-control" placeholder="e.g. Microsoft Office 2024">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select id="swCategory" class="form-control">
+          <option value="">Select category...</option>
+          <option>Office</option><option>Productivity</option><option>Utility</option>
+          <option>Design</option><option>Video</option><option>Audio</option>
+          <option>Browser</option><option>Security</option><option>Development</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea id="swDesc" class="form-control" placeholder="Short description..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Thumbnail URL</label>
+      <input type="text" id="swThumb" class="form-control" placeholder="https://example.com/icon.png">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Download URL *</label>
+      <input type="text" id="swDownloadUrl" class="form-control" placeholder="https://...">
+    </div>
+    <div id="swFormError" style="color: var(--danger); font-size:13px; margin-top:4px;"></div>
+    <div class="modal-footer-btns">
+      <button class="btn btn-secondary" data-close="swModal">Cancel</button>
+      <button class="btn btn-primary" id="saveSwBtn"> Save Software</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Software Confirm Modal -->
+<div class="modal-overlay" id="deleteSwModal">
+  <div class="modal-box modal-sm">
+    <div class="confirm-icon"></div>
+    <div class="confirm-msg">You're about to permanently delete</div>
+    <div class="confirm-name" id="deleteSwName">—</div>
+    <p style="text-align:center; font-size:12px; color: var(--text-muted); margin-bottom:20px;">This action cannot be undone.</p>
+    <div class="modal-footer-btns" style="justify-content:center;">
+      <button class="btn btn-secondary" data-close="deleteSwModal">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteSwBtn">Delete Permanently</button>
     </div>
   </div>
 </div>
@@ -1323,6 +1417,7 @@
 
     if (section === 'dashboard') loadDashboard();
     if (section === 'games') loadGames();
+    if (section === 'software') loadSoftware();
     if (section === 'announcements') loadAnnouncements();
     if (section === 'orders') loadOrders();
     if (section === 'codes') refreshCodesSection();
@@ -1366,6 +1461,12 @@
         </tr>
       `).join('') : '<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding:20px;">No games yet.</td></tr>';
     });
+
+    // Software count
+    try {
+      const swSnap = await getDocs(collection(db, 'software'));
+      document.getElementById('stat-software').textContent = swSnap.size;
+    } catch { document.getElementById('stat-software').textContent = '—'; }
 
     // Announcements count
     const annSnap = await getDocs(query(collection(db, 'announcements'), where('active', '==', true)));
@@ -1798,6 +1899,150 @@
     const a = document.createElement('a'); a.href = url; a.download = `games_${new Date().toISOString().slice(0,10)}.csv`;
     a.click(); URL.revokeObjectURL(url);
     toast('Games exported!', 'success');
+  });
+
+  /* ════════════════════════════════════
+     SOFTWARE MANAGEMENT
+  ════════════════════════════════════ */
+  let allSoftware = [];
+  let pendingDeleteSwId = null;
+
+  async function loadSoftware() {
+    const tbody = document.getElementById('swTableBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+    try {
+      const snap = await getDocs(query(collection(db, 'software'), orderBy('name')));
+      allSoftware = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderSwTable();
+    } catch (err) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Failed to load software.</td></tr>';
+    }
+  }
+
+  function renderSwTable() {
+    const tbody = document.getElementById('swTableBody');
+    if (!allSoftware.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">No software added yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = allSoftware.map(sw => `
+      <tr>
+        <td>
+          <img class="game-thumb-sm" src="${escapeHtml(sw.thumb || '')}" alt=""
+            onerror="this.src='https://placehold.co/38x38/0f1119/2dd4bf?text=?'" loading="lazy">
+        </td>
+        <td><strong>${escapeHtml(sw.name)}</strong></td>
+        <td><span class="badge badge-hidden" style="font-size:10px;">${escapeHtml(sw.category || '—')}</span></td>
+        <td><span class="dl-count">${(sw.downloads||0).toLocaleString()}</span></td>
+        <td>
+          <div class="action-buttons">
+            <button class="btn btn-secondary btn-sm edit-sw-btn" data-id="${sw.id}"> Edit</button>
+            <button class="btn btn-danger btn-sm del-sw-btn" data-id="${sw.id}" data-name="${escapeHtml(sw.name)}"></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.edit-sw-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditSw(btn.dataset.id));
+    });
+    tbody.querySelectorAll('.del-sw-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        pendingDeleteSwId = btn.dataset.id;
+        document.getElementById('deleteSwName').textContent = btn.dataset.name;
+        openModal('deleteSwModal');
+      });
+    });
+  }
+
+  function resetSwForm() {
+    document.getElementById('editSwId').value = '';
+    document.getElementById('swName').value = '';
+    document.getElementById('swCategory').value = '';
+    document.getElementById('swDesc').value = '';
+    document.getElementById('swThumb').value = '';
+    document.getElementById('swDownloadUrl').value = '';
+    document.getElementById('swFormError').textContent = '';
+  }
+
+  document.getElementById('openAddSwBtn').addEventListener('click', () => {
+    resetSwForm();
+    document.getElementById('swModalTitle').textContent = 'Add New Software';
+    openModal('swModal');
+  });
+
+  function openEditSw(id) {
+    const sw = allSoftware.find(s => s.id === id);
+    if (!sw) return;
+    resetSwForm();
+    document.getElementById('editSwId').value = id;
+    document.getElementById('swModalTitle').textContent = 'Edit Software';
+    document.getElementById('swName').value = sw.name || '';
+    document.getElementById('swCategory').value = sw.category || '';
+    document.getElementById('swDesc').value = sw.desc || '';
+    document.getElementById('swThumb').value = sw.thumb || '';
+    document.getElementById('swDownloadUrl').value = sw.downloadUrl || '';
+    openModal('swModal');
+  }
+
+  document.getElementById('saveSwBtn').addEventListener('click', async () => {
+    const name = document.getElementById('swName').value.trim();
+    const category = document.getElementById('swCategory').value;
+    const desc = document.getElementById('swDesc').value.trim();
+    const downloadUrl = document.getElementById('swDownloadUrl').value.trim();
+    const editId = document.getElementById('editSwId').value;
+    const errEl = document.getElementById('swFormError');
+
+    if (!name) { errEl.textContent = 'Software name is required.'; return; }
+    if (!category) { errEl.textContent = 'Category is required.'; return; }
+    if (!downloadUrl) { errEl.textContent = 'Download URL is required.'; return; }
+    errEl.textContent = '';
+
+    const btn = document.getElementById('saveSwBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+
+    const thumb = document.getElementById('swThumb').value.trim();
+    const data = { name, category, desc, thumb: thumb || null, downloadUrl };
+
+    try {
+      if (editId) {
+        await updateDoc(doc(db, 'software', editId), data);
+        const idx = allSoftware.findIndex(s => s.id === editId);
+        if (idx !== -1) allSoftware[idx] = { ...allSoftware[idx], ...data };
+        toast('Software updated!', 'success');
+      } else {
+        data.downloads = 0;
+        data.created_at = serverTimestamp();
+        const ref = await addDoc(collection(db, 'software'), data);
+        allSoftware.unshift({ id: ref.id, ...data });
+        toast('Software added!', 'success');
+      }
+      closeModal('swModal');
+      renderSwTable();
+    } catch (err) {
+      errEl.textContent = `Error: ${err.message}`;
+      toast('Failed to save software', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = ' Save Software';
+    }
+  });
+
+  document.getElementById('confirmDeleteSwBtn').addEventListener('click', async () => {
+    if (!pendingDeleteSwId) return;
+    const btn = document.getElementById('confirmDeleteSwBtn');
+    btn.disabled = true; btn.textContent = 'Deleting...';
+    try {
+      await deleteDoc(doc(db, 'software', pendingDeleteSwId));
+      allSoftware = allSoftware.filter(s => s.id !== pendingDeleteSwId);
+      renderSwTable();
+      closeModal('deleteSwModal');
+      toast('Software deleted.', 'success');
+    } catch (err) {
+      toast(`Delete failed: ${err.message}`, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Delete Permanently';
+      pendingDeleteSwId = null;
+    }
   });
 
   /* ── Export Codes CSV ── */

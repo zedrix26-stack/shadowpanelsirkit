@@ -28,9 +28,11 @@
           allow create, update, delete: if isAdmin();
         }
 
-        // Orders — admin only
+        // Orders — public create + read, admin update/delete
         match /orders/{docId} {
-          allow read, write: if isAdmin();
+          allow create: if true;
+          allow read: if true;
+          allow update, delete: if isAdmin();
         }
 
         // Codes — read for authenticated (used by client app), write only admin

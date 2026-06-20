@@ -1077,6 +1077,27 @@
       </div>
     </div>
 
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Membership Level</label>
+        <select id="gameMembership" class="form-control">
+          <option value="All">All</option>
+          <option value="Member">Member</option>
+          <option value="Elite">Elite</option>
+          <option value="VIP">VIP</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Release Status</label>
+        <select id="gameReleaseStatus" class="form-control">
+          <option value="Full Release">Full Release</option>
+          <option value="Early Access">Early Access</option>
+          <option value="Beta">Beta</option>
+          <option value="Demo">Demo</option>
+        </select>
+      </div>
+    </div>
+
     <div id="gameFormError" style="color: var(--danger); font-size:13px; margin-top:4px;"></div>
 
     <div class="modal-footer-btns">
@@ -1521,7 +1542,10 @@
     try {
       // Merge Firestore games on top (Firestore entries override catalog by name)
       const snap = await getDocs(collection(db, 'games'));
-      const firestoreGames = snap.docs.map(d => ({ id: d.id, _source: 'firestore', ...d.data() }));
+      const firestoreGames = snap.docs.map(d => { 
+        const data = d.data(); 
+        return { id: d.id, _source: 'firestore', ...data, featured: data.featured === true || data.featured === 'Yes' || data.featured === 'true' || false };
+      });
       const firestoreNames = new Set(firestoreGames.map(g => g.name?.toLowerCase()));
       const catalogOnly = catalog.filter(g => !firestoreNames.has(g.name?.toLowerCase()));
       allGames = [...firestoreGames, ...catalogOnly];
@@ -1654,6 +1678,8 @@
     document.getElementById('gameCategory').value = '';
     document.getElementById('gameStatus').value = 'active';
     document.getElementById('gameFeatured').checked = false;
+    document.getElementById('gameMembership').value = 'All';
+    document.getElementById('gameReleaseStatus').value = 'Full Release';
     document.getElementById('gameFormError').textContent = '';
     document.getElementById('thumbPreview').style.display = 'none';
     document.getElementById('thumbPreview').src = '';
@@ -1680,6 +1706,8 @@
     document.getElementById('gameDownloadUrl').value = game.downloadUrl || '';
     document.getElementById('gameStatus').value = game.status || 'active';
     document.getElementById('gameFeatured').checked = !!game.featured;
+    document.getElementById('gameMembership').value = game.membership || 'All';
+    document.getElementById('gameReleaseStatus').value = game.releaseStatus || 'Full Release';
     if (game.thumb) {
       const preview = document.getElementById('thumbPreview');
       preview.src = game.thumb;
@@ -1750,19 +1778,21 @@
     const downloadUrl = document.getElementById('gameDownloadUrl').value.trim();
     const status = document.getElementById('gameStatus').value;
     const featured = document.getElementById('gameFeatured').checked;
+    const membership = document.getElementById('gameMembership').value;
+    const releaseStatus = document.getElementById('gameReleaseStatus').value;
     const editId = document.getElementById('editGameId').value;
     const editSource = document.getElementById('editGameId').dataset.source || '';
     const errEl = document.getElementById('gameFormError');
 
     if (!name) { errEl.textContent = 'Game name is required.'; return; }
     if (!category) { errEl.textContent = 'Category is required.'; return; }
-    if (!downloadUrl) { errEl.textContent = 'Download URL is required.'; return; }
+    if (status !== 'coming-soon' && !downloadUrl) { errEl.textContent = 'Download URL is required.'; return; }
     errEl.textContent = '';
 
     const btn = document.getElementById('saveGameBtn');
     btn.disabled = true; btn.textContent = 'Saving...';
 
-    const data = { name, category, desc, thumb: thumb || null, downloadUrl, status, featured };
+    const data = { name, category, desc, thumb: thumb || null, downloadUrl, status, featured, membership, releaseStatus };
 
     try {
       if (editId && editSource === 'firestore') {

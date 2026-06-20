@@ -56,6 +56,12 @@
         match /admin_stats/{docId} {
           allow read, write: if isAdmin();
         }
+
+        // VIP notifications — admin write, authenticated users read
+        match /vip_notifications/{docId} {
+          allow create, update, delete: if isAdmin();
+          allow read: if request.auth != null;
+        }
       }
     }
     ═══════════════════════════════════════════════════════════════════
@@ -721,6 +727,9 @@
     <button class="nav-item" data-section="codes">
       Access Codes
     </button>
+    <button class="nav-item" data-section="vipnotify">
+      VIP Notifications
+    </button>
 
     <div class="nav-section">System</div>
     <button class="nav-item" data-section="logs">
@@ -988,6 +997,33 @@
       </div>
     </section>
 
+    <!-- ─── VIP NOTIFICATIONS ─── -->
+    <section class="admin-section" id="sec-vipnotify">
+      <div class="topbar">
+        <h2>VIP Notifications</h2>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary btn-sm" id="refreshVipNotifyBtn">Refresh</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:14px 18px; margin-bottom:14px;">
+        <div style="font-size:13px; color:var(--text-muted);">
+          VIP notifications are sent automatically when a game with <strong>Early Access</strong>, <strong>Beta</strong>, or <strong>Demo</strong> release status has <strong>Notify VIP Members</strong> enabled on save.
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Game</th><th>Release Status</th><th>Message</th><th>Sent</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="vipNotifyTableBody">
+            <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -1095,6 +1131,19 @@
           <option value="Beta">Beta</option>
           <option value="Demo">Demo</option>
         </select>
+      </div>
+    </div>
+
+    <div class="form-group" id="vipNotifyGroup" style="display:none;">
+      <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:12px;">
+        <label class="toggle-sw">
+          <input type="checkbox" id="gameNotifyVip">
+          <span class="toggle-track"></span>
+        </label>
+        <div>
+          <div style="font-size:13px; font-weight:600; color:var(--warning);"> Notify VIP Members</div>
+          <div style="font-size:11px; color:var(--text-muted);">Send notification to all VIP users about this early/pre-release</div>
+        </div>
       </div>
     </div>
 
@@ -1337,6 +1386,21 @@
   function openModal(id) { document.getElementById(id).classList.add('open'); }
   function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+  async function sendVipNotification(gameName, releaseStatus) {
+    try {
+      await addDoc(collection(db, 'vip_notifications'), {
+        gameName,
+        releaseStatus,
+        message: `"${gameName}" is now available as ${releaseStatus} for VIP members!`,
+        created_at: serverTimestamp(),
+        read: false
+      });
+      toast('VIP members notified about ' + gameName, 'success');
+    } catch (err) {
+      toast('Failed to send VIP notification: ' + err.message, 'error');
+    }
+  }
+
   function statusBadge(status) {
     const map = { active: 'badge-active', hidden: 'badge-hidden', 'coming-soon': 'badge-coming' };
     const labels = { active: 'Active', hidden: 'Hidden', 'coming-soon': 'Coming Soon' };
@@ -1445,6 +1509,7 @@
     if (section === 'orders') loadOrders();
     if (section === 'codes') refreshCodesSection();
     if (section === 'logs') loadLogs();
+    if (section === 'vipnotify') loadVipNotifications();
   }
 
   document.querySelectorAll('.nav-item[data-section]').forEach(btn => {
@@ -1680,6 +1745,8 @@
     document.getElementById('gameFeatured').checked = false;
     document.getElementById('gameMembership').value = 'All';
     document.getElementById('gameReleaseStatus').value = 'Full Release';
+    document.getElementById('gameNotifyVip').checked = false;
+    document.getElementById('vipNotifyGroup').style.display = 'none';
     document.getElementById('gameFormError').textContent = '';
     document.getElementById('thumbPreview').style.display = 'none';
     document.getElementById('thumbPreview').src = '';
@@ -1708,6 +1775,8 @@
     document.getElementById('gameFeatured').checked = !!game.featured;
     document.getElementById('gameMembership').value = game.membership || 'All';
     document.getElementById('gameReleaseStatus').value = game.releaseStatus || 'Full Release';
+    document.getElementById('gameNotifyVip').checked = !!game.notifyVip;
+    updateVipNotifyVisibility();
     if (game.thumb) {
       const preview = document.getElementById('thumbPreview');
       preview.src = game.thumb;
@@ -1715,6 +1784,19 @@
     }
     openModal('gameModal');
   }
+
+  // VIP notify — show only for early/pre-release statuses
+  function updateVipNotifyVisibility() {
+    const releaseVal = document.getElementById('gameReleaseStatus').value;
+    const membershipVal = document.getElementById('gameMembership').value;
+    const group = document.getElementById('vipNotifyGroup');
+    const isPreRelease = ['Early Access', 'Beta', 'Demo'].includes(releaseVal);
+    const isVipOrAll = membershipVal === 'VIP' || membershipVal === 'All';
+    group.style.display = (isPreRelease && isVipOrAll) ? 'block' : 'none';
+    if (!(isPreRelease && isVipOrAll)) document.getElementById('gameNotifyVip').checked = false;
+  }
+  document.getElementById('gameReleaseStatus').addEventListener('change', updateVipNotifyVisibility);
+  document.getElementById('gameMembership').addEventListener('change', updateVipNotifyVisibility);
 
   // Thumbnail URL preview
   document.getElementById('gameThumb').addEventListener('input', e => {
@@ -1780,6 +1862,7 @@
     const featured = document.getElementById('gameFeatured').checked;
     const membership = document.getElementById('gameMembership').value;
     const releaseStatus = document.getElementById('gameReleaseStatus').value;
+    const notifyVip = document.getElementById('gameNotifyVip').checked;
     const editId = document.getElementById('editGameId').value;
     const editSource = document.getElementById('editGameId').dataset.source || '';
     const errEl = document.getElementById('gameFormError');
@@ -1792,7 +1875,7 @@
     const btn = document.getElementById('saveGameBtn');
     btn.disabled = true; btn.textContent = 'Saving...';
 
-    const data = { name, category, desc, thumb: thumb || null, downloadUrl, status, featured, membership, releaseStatus };
+    const data = { name, category, desc, thumb: thumb || null, downloadUrl, status, featured, membership, releaseStatus, notifyVip };
 
     try {
       if (editId && editSource === 'firestore') {
@@ -1800,6 +1883,7 @@
         await updateDoc(doc(db, 'games', editId), data);
         const idx = allGames.findIndex(g => g.id === editId);
         if (idx !== -1) allGames[idx] = { ...allGames[idx], ...data };
+        if (notifyVip) await sendVipNotification(name, releaseStatus);
         toast('Game updated!', 'success');
       } else {
         // New game OR catalog game being promoted to Firestore
@@ -1809,6 +1893,7 @@
         // Remove old catalog entry if this was a catalog edit
         if (editId) allGames = allGames.filter(g => g.id !== editId);
         allGames.unshift({ id: ref.id, _source: 'firestore', ...data });
+        if (notifyVip) await sendVipNotification(name, releaseStatus);
         toast(editId ? 'Game saved to Firestore!' : 'Game added!', 'success');
       }
       closeModal('gameModal');
@@ -2516,6 +2601,36 @@
   }
 
   document.getElementById('refreshLogsBtn').addEventListener('click', loadLogs);
+
+  /* ════════════════════════════════════
+     VIP NOTIFICATIONS
+  ════════════════════════════════════ */
+  async function loadVipNotifications() {
+    const tbody = document.getElementById('vipNotifyTableBody');
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+    try {
+      const snap = await getDocs(query(collection(db, 'vip_notifications'), orderBy('created_at', 'desc')));
+      const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (!notifs.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:28px;">No VIP notifications sent yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = notifs.map(n => {
+        const time = n.created_at ? new Date(n.created_at.toDate()).toLocaleString() : '—';
+        return `<tr>
+          <td><strong>${escapeHtml(n.gameName || '—')}</strong></td>
+          <td><span class="badge badge-coming">${escapeHtml(n.releaseStatus || '—')}</span></td>
+          <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(n.message || '—')}</td>
+          <td style="font-size:11px;white-space:nowrap;">${time}</td>
+          <td>${n.read ? '<span class="badge badge-active">Read</span>' : '<span class="badge badge-coming">Unread</span>'}</td>
+        </tr>`;
+      }).join('');
+    } catch (err) {
+      tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:20px;">Failed to load notifications: ${escapeHtml(err.message)}</td></tr>`;
+    }
+  }
+
+  document.getElementById('refreshVipNotifyBtn')?.addEventListener('click', loadVipNotifications);
 
   /* ════════════════════════════════════
      ORDERS — PAYMENT VERIFICATION

@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 
@@ -1014,7 +1014,7 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Game</th><th>Release Status</th><th>Message</th><th>Sent</th><th>Status</th><th>Action</th>
+              <th>Game</th><th>Release Status</th><th>Message</th><th>Sent</th><th>Status</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="vipNotifyTableBody">
@@ -2623,7 +2623,7 @@
           <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(n.message || '—')}</td>
           <td style="font-size:11px;white-space:nowrap;">${time}</td>
           <td>${n.read ? '<span class="badge badge-active">Read</span>' : '<span class="badge badge-coming">Unread</span>'}</td>
-          <td><button class="btn btn-danger btn-xs delete-vip-notif" data-id="${n.id}">Delete</button></td>
+          <td><button class="btn-admin btn-admin-danger btn-sm del-vipnotif-btn" data-id="${n.id}" style="padding:3px 8px;font-size:11px;">Delete</button></td>
         </tr>`;
       }).join('');
     } catch (err) {
@@ -2633,20 +2633,14 @@
 
   document.getElementById('refreshVipNotifyBtn')?.addEventListener('click', loadVipNotifications);
 
-  document.getElementById('vipNotifyTableBody').addEventListener('click', async e => {
-    const btn = e.target.closest('.delete-vip-notif');
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.del-vipnotif-btn');
     if (!btn) return;
     if (!confirm('Delete this VIP notification?')) return;
-    const id = btn.dataset.id;
-    btn.disabled = true; btn.textContent = '...';
-    try {
-      await deleteDoc(doc(db, 'vip_notifications', id));
-      toast('Notification deleted.', 'success');
-      loadVipNotifications();
-    } catch (err) {
-      toast('Error: ' + err.message, 'error');
-      btn.disabled = false; btn.textContent = 'Delete';
-    }
+    btn.disabled = true;
+    deleteDoc(doc(db, 'vip_notifications', btn.dataset.id))
+      .then(() => { toast('Notification deleted.', 'success'); loadVipNotifications(); })
+      .catch(err => { toast('Delete failed: ' + err.message, 'error'); btn.disabled = false; });
   });
 
   /* ════════════════════════════════════

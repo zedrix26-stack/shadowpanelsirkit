@@ -1014,11 +1014,11 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>Game</th><th>Release Status</th><th>Message</th><th>Sent</th><th>Status</th>
+              <th>Game</th><th>Release Status</th><th>Message</th><th>Sent</th><th>Status</th><th>Action</th>
             </tr>
           </thead>
           <tbody id="vipNotifyTableBody">
-            <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
+            <tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -2607,12 +2607,12 @@
   ════════════════════════════════════ */
   async function loadVipNotifications() {
     const tbody = document.getElementById('vipNotifyTableBody');
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
     try {
       const snap = await getDocs(query(collection(db, 'vip_notifications'), orderBy('created_at', 'desc')));
       const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (!notifs.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:28px;">No VIP notifications sent yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:28px;">No VIP notifications sent yet.</td></tr>';
         return;
       }
       tbody.innerHTML = notifs.map(n => {
@@ -2623,14 +2623,31 @@
           <td style="font-size:12px;color:var(--text-muted);">${escapeHtml(n.message || '—')}</td>
           <td style="font-size:11px;white-space:nowrap;">${time}</td>
           <td>${n.read ? '<span class="badge badge-active">Read</span>' : '<span class="badge badge-coming">Unread</span>'}</td>
+          <td><button class="btn btn-danger btn-xs delete-vip-notif" data-id="${n.id}">Delete</button></td>
         </tr>`;
       }).join('');
     } catch (err) {
-      tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:20px;">Failed to load notifications: ${escapeHtml(err.message)}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:20px;">Failed to load notifications: ${escapeHtml(err.message)}</td></tr>`;
     }
   }
 
   document.getElementById('refreshVipNotifyBtn')?.addEventListener('click', loadVipNotifications);
+
+  document.getElementById('vipNotifyTableBody').addEventListener('click', async e => {
+    const btn = e.target.closest('.delete-vip-notif');
+    if (!btn) return;
+    if (!confirm('Delete this VIP notification?')) return;
+    const id = btn.dataset.id;
+    btn.disabled = true; btn.textContent = '...';
+    try {
+      await deleteDoc(doc(db, 'vip_notifications', id));
+      toast('Notification deleted.', 'success');
+      loadVipNotifications();
+    } catch (err) {
+      toast('Error: ' + err.message, 'error');
+      btn.disabled = false; btn.textContent = 'Delete';
+    }
+  });
 
   /* ════════════════════════════════════
      ORDERS — PAYMENT VERIFICATION
